@@ -9,8 +9,8 @@ fix :
 21. add bsd support (complete)
 22. fix linux specific bugs
 23. drop musl ?
-24. add nerd font for not charging batter too.
-24. add more features :
+24. add nerd font for not charging battery too.
+25. add more features :
     (a) Appimage Detection (may-be?) 
     (b) Brew Packages Detection
     (c) Distrobox Containers Detection
