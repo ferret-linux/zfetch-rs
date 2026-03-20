@@ -4,3 +4,19 @@ fix :
 15. os-age on arm void ?
 16. better os-age module ?
 18. make it have better AMD gpu names ( amd sucks at naming their gpus in sysfs maake it use vulkaninfo if it detects / in name)
+19. fix gpu+Display module choose bug
+20. add windows support.
+21. add bsd support (complete)
+22. fix linux specific bugs
+23. drop musl ?
+24. add nerd font for not charging batter too.
+24. add more features :
+    (a) Appimage Detection (may-be?) 
+    (b) Brew Packages Detection
+    (c) Distrobox Containers Detection
+    (d) Zbox Containers Detection
+    (e) optional cowsay+fortune integration (dynamicall generated + random)
+    (f) Platform Detecton ( Arm , X86_64 ....)
+    (g) add more box styles
+    (h) allow left/righ change/toggle in icon/ascii shown
+    (i) fix GIF support
