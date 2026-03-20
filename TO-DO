@@ -1,9 +1,6 @@
 fix :
-3. fix UI & Terminal name detection (use better ways)
-7. use 365.25 instead of 365 in os_age ?
 8. fix os_age & package counts on many distros. ( void , fsd etc )
 13. make logic faster in (gpu)
 15. os-age on arm void ?
 16. better os-age module ?
 18. make it have better AMD gpu names ( amd sucks at naming their gpus in sysfs maake it use vulkaninfo if it detects / in name)
-20. add slowfetch in credits/hyprlink
