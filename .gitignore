@@ -1,3 +1,5 @@
 /target
 sizes
 src/modules/gpumodule_tests.rs
+/.vscode
+zfetch-rs.code-workspace
