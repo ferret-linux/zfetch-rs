@@ -11,9 +11,8 @@ fix :
 24. add nerd font for not charging battery too.
 25. add more features :
     (a) Appimage Detection (may-be?) 
-    (b) Brew Packages Detection
-    (c) Distrobox Containers Detection
-    (d) Zbox Containers Detection
-    (e) optional cowsay+fortune integration (dynamicall generated + random)
-    (f) add more box styles
-    (g) fix GIF support
+    (b) Distrobox Containers Detection
+    (c) Zbox Containers Detection
+    (d) optional cowsay+fortune integration (dynamicall generated + random)
+    (e) add more box styles
+    (f) fix GIF support

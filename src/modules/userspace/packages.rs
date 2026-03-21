@@ -256,6 +256,20 @@ pub fn packages() -> String {
         }
     }
 
+    // Homebrew - count directories in Cellar via $HOMEBREW_CELLAR env var
+    if let Ok(cellar) = env::var("HOMEBREW_CELLAR") {
+        if let Ok(entries) = fs::read_dir(&cellar) {
+            let count = entries
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().map_or(false, |ft| ft.is_dir()))
+                .count();
+            if count > 0 {
+                let icon = if nerd { "" } else { "(brew)" };
+                counts.push(format!("{} {}", icon, count));
+            }
+        }
+    }
+
     if counts.is_empty() {
         "unknown".to_string()
     } else {
