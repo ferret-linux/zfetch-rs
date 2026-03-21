@@ -14,3 +14,5 @@ fix :
     (d) optional cowsay+fortune integration (dynamicall generated + random)
     (e) add more box styles
     (f) fix GIF support
+    (g) fix image not following left or right ( image remains left , rest renders properly )
+26. merge Art Path & image part into 1 , remvoe the kitty only thing + add dynamic warning in its place
