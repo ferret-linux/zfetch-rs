@@ -283,6 +283,19 @@ fn draw_art_box(
         Span::styled(format!("[{}]", display), style.fg(value_color)),
     ]);
     frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 3, height: 1, ..inner });
+
+    // Art Position (index 4)
+    let selected = focused && app.index == 4;
+    let style = if selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
+    let pos_label = match app.art_position {
+        crate::configloader::ArtPosition::Left => "Left",
+        crate::configloader::ArtPosition::Right => "Right",
+    };
+    let line = Line::from(vec![
+        Span::styled("Art Position:", style.fg(key_color)),
+        Span::styled(format!("◀ {:^12} ▶", pos_label), style.fg(value_color)),
+    ]);
+    frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 4, height: 1, ..inner });
 }
 
 /// Draw the toggle grid with Core, Hardware, and Userspace columns

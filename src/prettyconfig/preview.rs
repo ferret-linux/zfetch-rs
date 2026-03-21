@@ -54,7 +54,7 @@ pub fn update_preview(app: &mut App) {
 
     // Generate full preview (art + sections)
     let (wide, narrow, small) = app.get_art_for_preview();
-    let output = renderer::draw_layout(&wide, &narrow, &sections, small.as_deref());
+    let output = renderer::draw_layout(&wide, &narrow, &sections, small.as_deref(), matches!(app.art_position, crate::configloader::ArtPosition::Right));
     app.preview_lines = output.lines().map(String::from).collect();
 
     // Generate sections-only preview for image mode

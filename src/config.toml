@@ -15,6 +15,9 @@
 ## Optionally set a custom image path (supports ~ for home directory)
 # image_path = "~/.config/zfetch/image.png"
 
+## Art position: "left" (default) or "right"
+# art_position = "left"
+
 ## Force nerd font icons on or off (overrides auto-detection from terminal font)
 ## Set to true to always use nerd font icons, false to never use them
 # nerd_fonts = true

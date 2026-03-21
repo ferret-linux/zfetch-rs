@@ -129,7 +129,7 @@ fn main() {
         };
 
         // Draw image layout (imagerender handles all the logic)
-        visuals::imagerender::draw_image_layout(&sections, image_path.as_deref());
+        visuals::imagerender::draw_image_layout(&sections, image_path.as_deref(), matches!(config.art_position, configloader::ArtPosition::Right));
     } else {
         // Standard ASCII art mode
         // Check for custom art first (overrides everything else)
@@ -176,7 +176,7 @@ fn main() {
 
         print!(
             "{}",
-            visuals::renderer::draw_layout(&wide, &narrow, &sections, small.as_deref())
+            visuals::renderer::draw_layout(&wide, &narrow, &sections, small.as_deref(), matches!(config.art_position, configloader::ArtPosition::Right))
         );
     }
 }

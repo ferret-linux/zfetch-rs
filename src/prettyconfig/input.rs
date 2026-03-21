@@ -102,6 +102,10 @@ impl App {
                     self.cycle_os_art_prev();
                     self.update_preview();
                 }
+                4 => {
+                    self.cycle_art_position();
+                    self.update_preview();
+                }
                 _ => {}
             },
             _ => {}
@@ -136,6 +140,10 @@ impl App {
             FocusArea::Art => match self.index {
                 0 => {
                     self.cycle_os_art_next();
+                    self.update_preview();
+                }
+                4 => {
+                    self.cycle_art_position();
                     self.update_preview();
                 }
                 _ => {}
@@ -180,6 +188,10 @@ impl App {
                     self.update_preview();
                 }
                 3 => self.start_editing(self.image_path.clone().unwrap_or_default()),
+                4 => {
+                    self.cycle_art_position();
+                    self.update_preview();
+                }
                 _ => {}
             },
             FocusArea::Core => {
@@ -230,6 +242,7 @@ impl App {
             &self.custom_art,
             self.image,
             &self.image_path,
+            self.art_position,
             self.box_style,
             self.border_line_style,
             self.gpu_display,

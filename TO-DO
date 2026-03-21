@@ -16,5 +16,4 @@ fix :
     (d) Zbox Containers Detection
     (e) optional cowsay+fortune integration (dynamicall generated + random)
     (f) add more box styles
-    (g) allow left/righ change/toggle in icon/ascii shown
-    (h) fix GIF support
+    (g) fix GIF support
