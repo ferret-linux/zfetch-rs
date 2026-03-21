@@ -1,26 +1,26 @@
 [package]
 name = "zfetch"
-version = "2.5.2"
+version = "2.6.0"
 edition = "2024"
 
 [profile.release]
 opt-level = 3
-lto = true  # Link Time Optimization
+lto = true
 debug = false
-codegen-units = 1  # Reduce the number of codegen units for more optimization
+codegen-units = 1
 panic = "abort"
 
 [dependencies]
-clap = { version = "4.5.53", features = ["derive"] }
+clap = { version = "4.6", features = ["derive"] }
 kitty_image = "0.1"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif"] }
 libc = "0.2"
-base64 = "0.21"
-memchr = "2.7"
+base64 = "0.22"
+memchr = "2.8"
 ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
 crossterm = "0.29.0"
-unicode-segmentation = "1.12.0"
-unicode-width = "0.2.2"
+unicode-segmentation = "1.12"
+unicode-width = "0.2"
 
 [profile.bench]
 debug = true

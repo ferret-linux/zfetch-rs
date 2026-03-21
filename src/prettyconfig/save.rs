@@ -2,7 +2,7 @@
 // Generates TOML content matching the original config.toml format
 
 use crate::configloader::{
-    BorderLineStyle, BoxStyle, CoreToggles, GpuDisplayMode, HardwareToggles, NerdFontSetting, OsArtSetting, ThemePreset, UserspaceToggles,
+    ArtPosition, BorderLineStyle, BoxStyle, CoreToggles, GpuDisplayMode, HardwareToggles, NerdFontSetting, OsArtSetting, ThemePreset, UserspaceToggles,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -56,6 +56,7 @@ pub fn generate_config_toml(
     custom_art: &Option<String>,
     image: bool,
     image_path: &Option<String>,
+    art_position: ArtPosition,
     box_style: BoxStyle,
     border_line_style: BorderLineStyle,
     gpu_display: GpuDisplayMode,
@@ -98,6 +99,18 @@ pub fn generate_config_toml(
         output.push_str(&format!("image_path = \"{}\"\n", collapse_home_path(path)));
     } else {
         output.push_str("# image_path = \"~/.config/zfetch/image.png\"\n");
+    }
+
+    output.push_str("\n## Art/image position: \"left\" (default) or \"right\"\n");
+    match art_position {
+        ArtPosition::Left => output.push_str("# art_position = \"left\"\n"),
+        ArtPosition::Right => output.push_str("art_position = \"right\"\n"),
+    }
+
+    output.push_str("\n## Art position: \"left\" (default) or \"right\"\n");
+    match art_position {
+        ArtPosition::Left => output.push_str("# art_position = \"left\"\n"),
+        ArtPosition::Right => output.push_str("art_position = \"right\"\n"),
     }
 
     output.push_str("\n## Nerd Font icons - auto-detect, force on, or force off\n");
@@ -153,6 +166,7 @@ pub fn generate_config_toml(
     output.push_str("## Toggle which items to show in Core.\n");
     write_bool_setting(&mut output, "os", core.os, true);
     write_bool_setting(&mut output, "kernel", core.kernel, true);
+    write_bool_setting(&mut output, "platform", core.platform, true);
     write_bool_setting(&mut output, "uptime", core.uptime, true);
     write_bool_setting(&mut output, "init", core.init, true);
     write_bool_setting(&mut output, "os_age", core.os_age, true);
@@ -189,7 +203,6 @@ pub fn generate_config_toml(
     write_bool_setting(&mut output, "ui", userspace.ui, true);
     write_bool_setting(&mut output, "editor", userspace.editor, true);
     write_bool_setting(&mut output, "terminal_font", userspace.terminal_font, true);
-
     output
 }
 
@@ -210,6 +223,7 @@ pub fn save_config(
     custom_art: &Option<String>,
     image: bool,
     image_path: &Option<String>,
+    art_position: ArtPosition,
     box_style: BoxStyle,
     border_line_style: BorderLineStyle,
     gpu_display: GpuDisplayMode,
@@ -224,7 +238,7 @@ pub fn save_config(
         fs::create_dir_all(parent).map_err(|e| format!("Could not create config directory: {}", e))?;
     }
 
-    let content = generate_config_toml(theme, nerd_fonts, os_art, custom_art, image, image_path, box_style, border_line_style, gpu_display, core, hardware, userspace);
+    let content = generate_config_toml(theme, nerd_fonts, os_art, custom_art, image, image_path, art_position, box_style, border_line_style, gpu_display, core, hardware, userspace);
 
     fs::write(&path, content).map_err(|e| format!("Could not write config file: {}", e))?;
 

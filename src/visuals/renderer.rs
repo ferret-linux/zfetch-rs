@@ -359,6 +359,36 @@ fn render_side_by_side(art_box: &[String], sections_box: &[String], output: &mut
     }
 }
 
+// Render two boxes side-by-side (sections on left, art on right).
+fn render_side_by_side_right(art_box: &[String], sections_box: &[String], output: &mut String) {
+    let total_row_count = art_box.len().max(sections_box.len());
+
+    let sections_box_visual_width = sections_box
+        .first()
+        .map(|l| visible_len(l))
+        .unwrap_or(0);
+    let sections_padding = " ".repeat(sections_box_visual_width);
+
+    for row_index in 0..total_row_count {
+        // Left side: sections box (or padding)
+        if row_index < sections_box.len() {
+            output.push_str(&sections_box[row_index]);
+        } else {
+            output.push_str(&sections_padding);
+        }
+
+        // Gap between boxes
+        output.push(' ');
+
+        // Right side: art box
+        if row_index < art_box.len() {
+            output.push_str(&art_box[row_index]);
+        }
+
+        output.push('\n');
+    }
+}
+
 // Render two boxes stacked vertically (art on top, sections below)
 fn render_stacked(art_box: &[String], sections_box: &[String], output: &mut String) {
     // Art box first (on top)
@@ -386,6 +416,7 @@ pub fn draw_layout(
     narrow_art: &[String],
     sections: &[Section],
     small_art: Option<&[String]>,
+    art_right: bool,
 ) -> String {
     // ---step 1: Calculate all art widths ---
     let wide_art_width = art_width(wide_art);
@@ -439,7 +470,7 @@ pub fn draw_layout(
                 let small_art_box_height = small_art_lines.len() + 2;
                 if sections_box.len() >= small_art_box_height && terminal_width >= small_side_by_side_width {
                     let art_box = build_box(small_art_lines, None, None, Some(sections_box.len()), true);
-                    render_side_by_side(&art_box, &sections_box, &mut output);
+                    if art_right { render_side_by_side_right(&art_box, &sections_box, &mut output); } else { render_side_by_side(&art_box, &sections_box, &mut output); }
                     true
                 } else {
                     false
@@ -452,7 +483,7 @@ pub fn draw_layout(
                 let narrow_side_by_side_width = narrow_art_width + 4 + 1 + sections_box_width;
                 if terminal_width >= narrow_side_by_side_width {
                     let art_box = build_box(narrow_art, None, None, Some(sections_box.len()), true);
-                    render_side_by_side(&art_box, &sections_box, &mut output);
+                    if art_right { render_side_by_side_right(&art_box, &sections_box, &mut output); } else { render_side_by_side(&art_box, &sections_box, &mut output); }
                 } else {
                     for line in &sections_box {
                         output.push_str(line);
@@ -462,7 +493,7 @@ pub fn draw_layout(
             }
         } else {
             let art_box = build_box(wide_art, None, None, Some(sections_box.len()), true);
-            render_side_by_side(&art_box, &sections_box, &mut output);
+            if art_right { render_side_by_side_right(&art_box, &sections_box, &mut output); } else { render_side_by_side(&art_box, &sections_box, &mut output); }
         }
     } else if small_art.is_some() && terminal_width >= small_side_by_side_width {
         // layout 2: small art side-by-side
@@ -474,7 +505,7 @@ pub fn draw_layout(
             let narrow_side_by_side_width = narrow_art_width + 4 + 1 + sections_box_width;
             if terminal_width >= narrow_side_by_side_width {
                 let art_box = build_box(narrow_art, None, None, Some(sections_box.len()), true);
-                render_side_by_side(&art_box, &sections_box, &mut output);
+                if art_right { render_side_by_side_right(&art_box, &sections_box, &mut output); } else { render_side_by_side(&art_box, &sections_box, &mut output); }
             } else {
                 for line in &sections_box {
                     output.push_str(line);
@@ -483,7 +514,7 @@ pub fn draw_layout(
             }
         } else {
             let art_box = build_box(small_art_lines, None, None, Some(sections_box.len()), true);
-            render_side_by_side(&art_box, &sections_box, &mut output);
+            if art_right { render_side_by_side_right(&art_box, &sections_box, &mut output); } else { render_side_by_side(&art_box, &sections_box, &mut output); }
         }
     } else if small_art.is_some() && terminal_height >= sections_total_height + small_art.unwrap().len() + 2 {
         // layout 3: small art stacked

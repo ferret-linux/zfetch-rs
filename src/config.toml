@@ -8,6 +8,9 @@
 ## Custom ASCII art file path. (overrides default and OS art)
 ## The file can use {0} through {7} for color placeholders.
 # custom_art = "~/.config/zfetch/my_art.txt"
+## Art position: "left" (default) or "right"
+# art_position = "left"
+
 
 ## Display image instead of ASCII art (uses Kitty graphics protocol)
 ## Set to true to always show an image (uses default zfetch image if no path set)
@@ -54,6 +57,7 @@
 ## Toggle which items to show in Core.
 # os = true
 # kernel = true
+# platform = true
 # uptime = true
 # init = true
 # os_age = true

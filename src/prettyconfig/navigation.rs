@@ -2,7 +2,7 @@
 // Contains FocusArea enum, App struct, and navigation methods
 
 use crate::configloader::{
-    BorderLineStyle, BoxStyle, Config, CoreToggles, GpuDisplayMode, HardwareToggles, NerdFontSetting, OsArtSetting, ThemePreset, UserspaceToggles,
+    ArtPosition, BorderLineStyle, BoxStyle, Config, CoreToggles, GpuDisplayMode, HardwareToggles, NerdFontSetting, OsArtSetting, ThemePreset, UserspaceToggles,
 };
 use crate::dostuff;
 use crate::modules::ascii;
@@ -47,7 +47,7 @@ impl FocusArea {
     pub fn max_index(self) -> usize {
         match self {
             Self::General => 4,   // Theme, Nerd Fonts, Box Style, Border Lines, GPU Display
-            Self::Art => 3,       // OS Art, Custom Art, Image Enabled, Image Path
+            Self::Art => 4,       // OS Art, Custom Art, Image Enabled, Image Path
             Self::Core => 4,      // OS, Kernel, Uptime, Init, OS Age
             Self::Hardware => 5,  // CPU, GPU, Memory, Storage, Battery, Screen
             Self::Userspace => 6, // Packages, Terminal, Shell, WM, UI, Editor, Term Font
@@ -67,6 +67,7 @@ pub struct App {
     pub box_style: BoxStyle,
     pub border_line_style: BorderLineStyle,
     pub gpu_display: GpuDisplayMode,
+    pub art_position: ArtPosition,
     pub core: CoreToggles,
     pub hardware: HardwareToggles,
     pub userspace: UserspaceToggles,
@@ -113,7 +114,7 @@ impl App {
 
         // Load sections with ALL toggles enabled for preview
         let mut full_config = config.clone();
-        full_config.core = CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true };
+        full_config.core = CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true, platform: true };
         full_config.hardware = HardwareToggles {
             cpu: true, gpu: true, gpu_display: config.hardware.gpu_display, memory: true, storage: true, battery: true, screen: true,
         };
@@ -132,6 +133,7 @@ impl App {
             box_style: config.box_style,
             border_line_style: config.border_line_style,
             gpu_display: config.hardware.gpu_display,
+            art_position: config.art_position,
             core: config.core.clone(),
             hardware: config.hardware.clone(),
             userspace: config.userspace.clone(),
@@ -299,6 +301,13 @@ impl App {
         self.reload_sections_for_gpu_display();
     }
 
+    pub fn cycle_art_position(&mut self) {
+        self.art_position = match self.art_position {
+            ArtPosition::Left => ArtPosition::Right,
+            ArtPosition::Right => ArtPosition::Left,
+        };
+    }
+
     pub fn cycle_gpu_display_prev(&mut self) {
         self.gpu_display = match self.gpu_display {
             GpuDisplayMode::Auto => GpuDisplayMode::Both,
@@ -324,10 +333,11 @@ impl App {
             custom_art: self.custom_art.clone(),
             image: self.image,
             image_path: self.image_path.clone(),
+            art_position: self.art_position,
             nerd_fonts: self.nerd_fonts,
             box_style: self.box_style,
             border_line_style: self.border_line_style,
-            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true },
+            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true, platform: true },
             hardware: HardwareToggles {
                 cpu: true, gpu: true, gpu_display: self.gpu_display, memory: true, storage: true, battery: true, screen: true,
             },
@@ -346,10 +356,11 @@ impl App {
             custom_art: self.custom_art.clone(),
             image: self.image,
             image_path: self.image_path.clone(),
+            art_position: self.art_position,
             nerd_fonts: self.nerd_fonts,
             box_style: self.box_style,
             border_line_style: self.border_line_style,
-            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true },
+            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true, platform: true },
             hardware: HardwareToggles {
                 cpu: true, gpu: true, gpu_display: self.gpu_display, memory: true, storage: true, battery: true, screen: true,
             },

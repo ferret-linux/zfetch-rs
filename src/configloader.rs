@@ -50,6 +50,7 @@ pub struct ColorConfig {
 pub struct CoreToggles {
     pub os: bool,
     pub kernel: bool,
+    pub platform: bool,
     pub uptime: bool,
     pub init: bool,
     pub os_age: bool,
@@ -60,6 +61,7 @@ impl Default for CoreToggles {
         Self {
             os: true,
             kernel: true,
+            platform: true,
             uptime: true,
             init: true,
             os_age: true,
@@ -158,6 +160,24 @@ pub enum NerdFontSetting {
     Auto,
     ForceOn,
     ForceOff,
+}
+
+// Art position - controls which side the ASCII art/image appears on
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub enum ArtPosition {
+    #[default]
+    Left,
+    Right,
+}
+
+impl ArtPosition {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "left" => Some(Self::Left),
+            "right" => Some(Self::Right),
+            _ => None,
+        }
+    }
 }
 
 // GPU display mode - controls which GPU(s) to show
@@ -261,6 +281,7 @@ impl BorderLineStyle {
 #[derive(Debug, Clone)]
 pub struct Config {
     pub os_art: OsArtSetting,
+    pub art_position: ArtPosition,
     pub colors: ColorConfig,
     pub custom_art: Option<String>,
     pub image: bool,
@@ -277,6 +298,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             os_art: OsArtSetting::Disabled,
+            art_position: ArtPosition::default(),
             colors: ColorConfig::default(),
             custom_art: None,
             image: false,
@@ -619,6 +641,21 @@ fn parse_config(content: &str) -> Config {
             }
         }
 
+        // Parse art_position setting
+        if key == b"art_position" && current_section == ConfigSection::Display {
+            if value.first() == Some(&b'"') && value.last() == Some(&b'"') && value.len() > 2 {
+                if let Ok(pos_name) = std::str::from_utf8(&value[1..value.len() - 1]) {
+                    if let Some(pos) = ArtPosition::from_str(pos_name) {
+                        config.art_position = pos;
+                    }
+                }
+            } else if let Ok(pos_name) = std::str::from_utf8(value) {
+                if let Some(pos) = ArtPosition::from_str(pos_name) {
+                    config.art_position = pos;
+                }
+            }
+        }
+
         // Parse box_style setting (rounded or square corners)
         if key == b"box_style" {
             if value.first() == Some(&b'"') && value.last() == Some(&b'"') && value.len() > 2 {
@@ -655,6 +692,7 @@ fn parse_config(content: &str) -> Config {
             match key {
                 b"os" => config.core.os = is_true,
                 b"kernel" => config.core.kernel = is_true,
+                b"platform" => config.core.platform = is_true,
                 b"uptime" => config.core.uptime = is_true,
                 b"init" => config.core.init = is_true,
                 b"os_age" => config.core.os_age = is_true,

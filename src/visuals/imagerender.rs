@@ -7,7 +7,7 @@ use crate::visuals::terminalsize::get_terminal_size;
 // Draw a side-by-side or vertically stacked layout with an image placeholder.
 // The image is rendered using Kitty graphics protocol after the box layout is printed.
 // Cursor positioning is used to overlay the image inside the empty box.
-pub fn draw_image_layout(sections: &[Section], image_path: Option<&std::path::Path>) {
+pub fn draw_image_layout(sections: &[Section], image_path: Option<&std::path::Path>, art_right: bool) {
     // --- step 1: Get terminal dimensions ---
     let (terminal_width, terminal_height) = get_terminal_size()
         .map(|(cols, rows)| (cols as usize, rows as usize))
@@ -48,11 +48,12 @@ pub fn draw_image_layout(sections: &[Section], image_path: Option<&std::path::Pa
 
     // --- step 4: Choose layout based on terminal width ---
     if terminal_width >= side_by_side_total_width {
-        // layout 1: Side-by-side (image on left, sections on right)
+        // layout 1: Side-by-side
         render_side_by_side_with_image(
             sections,
             image_path,
             image_content_width,
+            art_right,
         );
     } else {
         // layout 2: Stacked (image on top, sections below) or sections only
@@ -72,6 +73,7 @@ fn render_side_by_side_with_image(
     sections: &[Section],
     image_path: Option<&std::path::Path>,
     image_content_width: usize,
+    art_right: bool,
 ) {
     use std::io::Write;
 
@@ -95,23 +97,34 @@ fn render_side_by_side_with_image(
     let image_box_visual_width = visible_len(&image_box[0]);
     let image_padding_spaces = " ".repeat(image_box_visual_width);
 
+    let sections_box_visual_width = sections_box.first().map(|l| visible_len(l)).unwrap_or(0);
+    let sections_padding = " ".repeat(sections_box_visual_width);
+
     let mut output = String::new();
     for row_index in 0..total_row_count {
-        // Left side: image box (or padding if run out of lines)
-        if row_index < image_box.len() {
-            output.push_str(&image_box[row_index]);
+        if art_right {
+            // Left: sections, Right: image
+            if row_index < sections_box.len() {
+                output.push_str(&sections_box[row_index]);
+            } else {
+                output.push_str(&sections_padding);
+            }
+            output.push(' ');
+            if row_index < image_box.len() {
+                output.push_str(&image_box[row_index]);
+            }
         } else {
-            output.push_str(&image_padding_spaces);
+            // Left: image, Right: sections
+            if row_index < image_box.len() {
+                output.push_str(&image_box[row_index]);
+            } else {
+                output.push_str(&image_padding_spaces);
+            }
+            output.push(' ');
+            if row_index < sections_box.len() {
+                output.push_str(&sections_box[row_index]);
+            }
         }
-
-        // Gap between boxes
-        output.push(' ');
-
-        // Right side: sections box
-        if row_index < sections_box.len() {
-            output.push_str(&sections_box[row_index]);
-        }
-
         output.push('\n');
     }
 

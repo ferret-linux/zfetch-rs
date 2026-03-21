@@ -34,6 +34,7 @@ pub fn load_sections(config: &Config) -> (Section, Section, Section) {
     // Fast operations - just file reads or env var checks, no benefit from threading.
     let os = if config.core.os { Some(modules::core::os()) } else { None };
     let kernel = if config.core.kernel { Some(modules::core::kernel()) } else { None };
+    let platform = if config.core.platform { Some(modules::core::platform()) } else { None };
     let uptime = if config.core.uptime { Some(modules::core::uptime()) } else { None };
     let init = if config.core.init { Some(modules::core::init()) } else { None };
     let os_age = if config.core.os_age { Some(modules::core::os_age()) } else { None };
@@ -49,6 +50,7 @@ pub fn load_sections(config: &Config) -> (Section, Section, Section) {
     let mut core_lines = Vec::new();
     if let Some(v) = os { core_lines.push(("OS".to_string(), v)); }
     if let Some(v) = kernel { core_lines.push(("Kernel".to_string(), v)); }
+    if let Some(v) = platform { core_lines.push(("Platform".to_string(), v)); }
     if let Some(v) = uptime { core_lines.push(("Uptime".to_string(), v)); }
     if let Some(v) = init { core_lines.push(("Init".to_string(), v)); }
     if let Some(v) = os_age {
