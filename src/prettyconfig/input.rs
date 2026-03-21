@@ -186,9 +186,10 @@ impl App {
                 match self.index {
                     0 => self.core.os = !self.core.os,
                     1 => self.core.kernel = !self.core.kernel,
-                    2 => self.core.uptime = !self.core.uptime,
-                    3 => self.core.init = !self.core.init,
-                    4 => self.core.os_age = !self.core.os_age,
+                    2 => self.core.platform = !self.core.platform,
+                    3 => self.core.uptime = !self.core.uptime,
+                    4 => self.core.init = !self.core.init,
+                    5 => self.core.os_age = !self.core.os_age,
                     _ => {}
                 }
                 self.update_preview();

@@ -309,6 +309,7 @@ fn draw_toggle_grid(
     draw_toggle_column(frame, app, "Core", FocusArea::Core, &[
         ("OS", app.core.os),
         ("Kernel", app.core.kernel),
+        ("Platform", app.core.platform),
         ("Uptime", app.core.uptime),
         ("Init", app.core.init),
         ("OS Age", app.core.os_age),

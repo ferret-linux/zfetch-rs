@@ -50,6 +50,7 @@ pub struct ColorConfig {
 pub struct CoreToggles {
     pub os: bool,
     pub kernel: bool,
+    pub platform: bool,
     pub uptime: bool,
     pub init: bool,
     pub os_age: bool,
@@ -60,6 +61,7 @@ impl Default for CoreToggles {
         Self {
             os: true,
             kernel: true,
+            platform: true,
             uptime: true,
             init: true,
             os_age: true,
@@ -655,6 +657,7 @@ fn parse_config(content: &str) -> Config {
             match key {
                 b"os" => config.core.os = is_true,
                 b"kernel" => config.core.kernel = is_true,
+                b"platform" => config.core.platform = is_true,
                 b"uptime" => config.core.uptime = is_true,
                 b"init" => config.core.init = is_true,
                 b"os_age" => config.core.os_age = is_true,

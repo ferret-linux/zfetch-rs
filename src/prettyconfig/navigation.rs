@@ -113,7 +113,7 @@ impl App {
 
         // Load sections with ALL toggles enabled for preview
         let mut full_config = config.clone();
-        full_config.core = CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true };
+        full_config.core = CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true, platform: true };
         full_config.hardware = HardwareToggles {
             cpu: true, gpu: true, gpu_display: config.hardware.gpu_display, memory: true, storage: true, battery: true, screen: true,
         };
@@ -327,7 +327,7 @@ impl App {
             nerd_fonts: self.nerd_fonts,
             box_style: self.box_style,
             border_line_style: self.border_line_style,
-            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true },
+            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true, platform: true },
             hardware: HardwareToggles {
                 cpu: true, gpu: true, gpu_display: self.gpu_display, memory: true, storage: true, battery: true, screen: true,
             },
@@ -349,7 +349,7 @@ impl App {
             nerd_fonts: self.nerd_fonts,
             box_style: self.box_style,
             border_line_style: self.border_line_style,
-            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true },
+            core: CoreToggles { os: true, kernel: true, uptime: true, init: true, os_age: true, platform: true },
             hardware: HardwareToggles {
                 cpu: true, gpu: true, gpu_display: self.gpu_display, memory: true, storage: true, battery: true, screen: true,
             },

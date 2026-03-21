@@ -153,6 +153,7 @@ pub fn generate_config_toml(
     output.push_str("## Toggle which items to show in Core.\n");
     write_bool_setting(&mut output, "os", core.os, true);
     write_bool_setting(&mut output, "kernel", core.kernel, true);
+    write_bool_setting(&mut output, "platform", core.platform, true);
     write_bool_setting(&mut output, "uptime", core.uptime, true);
     write_bool_setting(&mut output, "init", core.init, true);
     write_bool_setting(&mut output, "os_age", core.os_age, true);
@@ -189,7 +190,6 @@ pub fn generate_config_toml(
     write_bool_setting(&mut output, "ui", userspace.ui, true);
     write_bool_setting(&mut output, "editor", userspace.editor, true);
     write_bool_setting(&mut output, "terminal_font", userspace.terminal_font, true);
-
     output
 }
 

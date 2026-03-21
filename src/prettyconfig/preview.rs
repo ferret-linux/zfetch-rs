@@ -101,6 +101,7 @@ fn filter_core_section(section: &Section, toggles: &CoreToggles) -> Section {
         .filter(|(key, _)| match key.as_str() {
             "OS" => toggles.os,
             "Kernel" => toggles.kernel,
+            "Platform" => toggles.platform,
             "Uptime" => toggles.uptime,
             "Init" => toggles.init,
             "OS Age" => toggles.os_age,

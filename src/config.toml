@@ -54,6 +54,7 @@
 ## Toggle which items to show in Core.
 # os = true
 # kernel = true
+# platform = true
 # uptime = true
 # init = true
 # os_age = true
