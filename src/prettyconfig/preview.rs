@@ -114,18 +114,44 @@ fn filter_core_section(section: &Section, toggles: &CoreToggles) -> Section {
 
 // Filter hardware section based on toggles
 fn filter_hardware_section(section: &Section, toggles: &HardwareToggles) -> Section {
-    let lines: Vec<_> = section.lines.iter()
-        .filter(|(key, _)| match key.as_str() {
-            "CPU" => toggles.cpu,
-            "GPU" => toggles.gpu,
-            "Memory" => toggles.memory,
-            "Storage" => toggles.storage,
-            "Battery" => toggles.battery,
-            k if k.starts_with("Display") || k.starts_with("├") || k.starts_with("╰") => toggles.screen,
+    // Branch keys (├─, ╰─) are shared between GPU Both-mode trees and multi-display
+    // trees. Track which parent header owns the current branch run to apply the
+    // correct toggle instead of blindly mapping all branches to toggles.screen.
+    #[derive(Clone, Copy)]
+    enum TreeOwner { Gpu, Screen, None }
+    let mut owner = TreeOwner::None;
+    let mut lines: Vec<(String, String)> = Vec::with_capacity(section.lines.len());
+
+    for (key, value) in &section.lines {
+        let keep = match key.as_str() {
+            "CPU"                => { owner = TreeOwner::None;   toggles.cpu     }
+            "GPU"                => { owner = TreeOwner::None;   toggles.gpu     }
+            "GPUs"               => { owner = TreeOwner::Gpu;    toggles.gpu     }
+            "Memory"             => { owner = TreeOwner::None;   toggles.memory  }
+            "Storage"            => { owner = TreeOwner::None;   toggles.storage }
+            "Battery"            => { owner = TreeOwner::None;   toggles.battery }
+            "Display" | "Displays" => { owner = TreeOwner::Screen; toggles.screen }
+            k if k.starts_with("├") || k.starts_with("╰") => match owner {
+                TreeOwner::Gpu    => toggles.gpu,
+                TreeOwner::Screen => toggles.screen,
+                TreeOwner::None   => true,
+            },
             _ => true,
-        })
-        .cloned()
-        .collect();
+        };
+
+        if keep {
+            lines.push((key.clone(), value.clone()));
+        } else if matches!(key.as_str(), "GPUs" | "Displays") {
+            // Header was filtered — reset owner so its branches don't survive
+            owner = TreeOwner::None;
+        }
+    }
+
+    // Guard: if a "GPUs" header lost all its children somehow, strip the orphan
+    if lines.last().map(|(k, _)| k.as_str()) == Some("GPUs") {
+        lines.pop();
+    }
+
     Section::new(&section.title, lines)
 }
 
