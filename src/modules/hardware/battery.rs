@@ -29,9 +29,10 @@ pub fn laptop_battery() -> String {
 
                 let nerd = get_cached_is_nerd_font();
                 let status_icon: &str = match status.as_str() {
-                    "Charging" => if nerd { "󰂐" } else { "(+)" },
-                    "Discharging" => if nerd { "󰂍" } else { "(-)" },
+                    "Charging" => if nerd { "󰂄" } else { "(+)" },
+                    "Discharging" => if nerd { "󱟤" } else { "(-)" },
                     "Full" => if nerd { "󰁹" } else { "(=)" },
+                    "Not charging" | "Not Charging" => if nerd { "" } else { "(=)" },
                     _ => &status,
                 };
 

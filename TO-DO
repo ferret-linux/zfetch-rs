@@ -10,9 +10,7 @@ fix :
 23. drop musl ?
 24. add nerd font for not charging battery too.
 25. add more features :
-    (a) Appimage Detection (may-be?) 
     (b) Distrobox Containers Detection
-    (c) Zbox Containers Detection
     (d) optional cowsay+fortune integration (dynamicall generated + random)
     (e) add more box styles
     (f) fix GIF support

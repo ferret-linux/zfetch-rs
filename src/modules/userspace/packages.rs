@@ -91,7 +91,27 @@ fn count_rpm_sqlite(db_path: &str) -> Option<usize> {
 }
 
 // Get the total number of installed packages.
-// Supports pacman aka Arch, hopefully supports debian and fedora but idk, im not setting up a vm to test sorry
+
+// Recursively count .AppImage files under a directory
+fn count_appimages(dir: &Path) -> usize {
+    let Ok(entries) = fs::read_dir(dir) else { return 0 };
+    let mut count = 0;
+    for entry in entries.flatten() {
+        let ft = match entry.file_type() {
+            Ok(ft) => ft,
+            Err(_) => continue,
+        };
+        if ft.is_dir() {
+            count += count_appimages(&entry.path());
+        } else if ft.is_file() && entry.file_name().as_encoded_bytes().ends_with(b".AppImage") {
+            count += 1;
+        }
+    }
+    count
+}
+
+// Get the total number of installed packages.
+// Supports fedora (rpm), arch & hopefully supports debian , solus , artix , nixOS , void , gentoo , alpine
 pub fn packages() -> String {
     let mut counts: Vec<String> = Vec::with_capacity(9);
     let nerd = get_cached_is_nerd_font();
@@ -256,6 +276,39 @@ pub fn packages() -> String {
         }
     }
 
+    // AppImage - recursively count .AppImage files in ~/Applications
+    if let Ok(home) = env::var("HOME") {
+        let appimage_dir = format!("{}/Applications", home);
+        let count = count_appimages(Path::new(&appimage_dir));
+        if count > 0 {
+            let icon = if nerd { "󱑢" } else { "(appimage)" };
+            counts.push(format!("{} {}", icon, count));
+        }
+    }
+
+    // Zbox - read container count from ~/.config/zbox/data.toml
+    if let Ok(home) = env::var("HOME") {
+        let zbox_toml = format!("{}/.config/zbox/data.toml", home);
+        if let Ok(content) = fs::read(&zbox_toml) {
+            let needle = b"zfetch-integration-zbox";
+            if let Some(pos) = memmem::find(&content, needle) {
+                // Find the newline after the key to get the value line
+                let after = &content[pos + needle.len()..];
+                if let Some(nl) = memchr::memchr(b'\n', after) {
+                    let line = std::str::from_utf8(&after[..nl]).unwrap_or("").trim();
+                    // Strip '= ' prefix if present
+                    let value = line.trim_start_matches('=').trim();
+                    if let Ok(count) = value.parse::<usize>() {
+                        if count > 0 {
+                            let icon = if nerd { "󰬡" } else { "(zbox)" };
+                            counts.push(format!("{} {}", icon, count));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Homebrew - count directories in Cellar via $HOMEBREW_CELLAR env var
     if let Ok(cellar) = env::var("HOMEBREW_CELLAR") {
         if let Ok(entries) = fs::read_dir(&cellar) {
@@ -273,6 +326,6 @@ pub fn packages() -> String {
     if counts.is_empty() {
         "unknown".to_string()
     } else {
-        counts.join(" | ")
+        counts.join(",")
     }
 }
