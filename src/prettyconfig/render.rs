@@ -193,7 +193,7 @@ fn draw_general_box(
     frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 4, height: 1, ..inner });
 }
 
-/// Draw the art configuration box (OS Art, Custom Art, Image, Image Path)
+/// Draw the art configuration box (Mode + Source + Art Position)
 fn draw_art_box(
     frame: &mut Frame,
     app: &mut App,
@@ -228,64 +228,61 @@ fn draw_art_box(
         height: area.height.saturating_sub(2),
     };
 
-    // OS Art (index 0)
+    // Derive the current art mode from app state:
+    //   Built-in = OS art auto/specific (no custom path needed)
+    //   Custom    = custom ASCII/text art file
+    //   Image     = pixel image file
+    let builtin = !app.image && app.custom_art.is_none();
+
+    // Mode (index 0) → Built-in / Custom Art / Image
     let selected = focused && app.index == 0;
     let style = if selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
-    let os_art_display = match &app.os_art {
-        OsArtSetting::Disabled => "Disabled",
-        OsArtSetting::Auto => "Auto",
-        OsArtSetting::Specific(s) => s.as_str(),
-    };
+    let mode_label = if app.image { "Image" } else if builtin { "Built-in" } else { "Custom Art" };
     let line = Line::from(vec![
-        Span::styled("OS Art:      ", style.fg(key_color)),
-        Span::styled(format!("◀ {:^12} ▶", os_art_display), style.fg(value_color)),
+        Span::styled("Mode:        ", style.fg(key_color)),
+        Span::styled(format!("◀ {:^12} ▶", mode_label), style.fg(value_color)),
     ]);
     frame.render_widget(Paragraph::new(line), Rect { y: inner.y, height: 1, ..inner });
 
-    // Custom Art (index 1)
+    // Index 1 row: OS Art sub-setting (Built-in) or Source path (Custom Art / Image)
     let selected = focused && app.index == 1;
-    let style = if selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
-    let value_width = inner.width.saturating_sub(14) as usize;
-    let custom_value = if app.editing && selected {
-        format_edit_buffer(&app.edit_buffer, app.cursor_pos)
+    let style = if selected {
+        Style::default().add_modifier(Modifier::REVERSED)
     } else {
-        app.custom_art.clone().unwrap_or_else(|| "(none)".to_string())
+        Style::default()
     };
-    let display = truncate_path(&custom_value, value_width.saturating_sub(2));
-    let line = Line::from(vec![
-        Span::styled("Custom Art:  ", style.fg(key_color)),
-        Span::styled(format!("[{}]", display), style.fg(value_color)),
-    ]);
-    frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 1, height: 1, ..inner });
+    if builtin {
+        // OS Art (index 1) — Disabled / Auto when in Built-in mode
+        let os_art_label = match &app.os_art {
+            OsArtSetting::Disabled => "Disabled",
+            OsArtSetting::Auto => "Auto",
+            OsArtSetting::Specific(s) => s.as_str(),
+        };
+        let line = Line::from(vec![
+            Span::styled("OS Art:      ", style.fg(key_color)),
+            Span::styled(format!("◀ {:^12} ▶", os_art_label), style.fg(value_color)),
+        ]);
+        frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 1, height: 1, ..inner });
+    } else {
+        // Source path (index 1) — file path for Custom Art or Image
+        let value_width = inner.width.saturating_sub(14) as usize;
+        let source_value = if app.editing && selected {
+            format_edit_buffer(&app.edit_buffer, app.cursor_pos)
+        } else if app.image {
+            app.image_path.clone().unwrap_or_else(|| "(none)".to_string())
+        } else {
+            app.custom_art.clone().unwrap_or_else(|| "(none)".to_string())
+        };
+        let display = truncate_path(&source_value, value_width.saturating_sub(2));
+        let line = Line::from(vec![
+            Span::styled("Source:      ", style.fg(key_color)),
+            Span::styled(format!("[{}]", display), style.fg(value_color)),
+        ]);
+        frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 1, height: 1, ..inner });
+    }
 
-    // Image Enabled (index 2)
+    // Art Position (index 2) — always at row 2 in all modes
     let selected = focused && app.index == 2;
-    let style = if selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
-    let checkbox = if app.image { "[x]" } else { "[ ]" };
-    let line = Line::from(vec![
-        Span::styled("Image:       ", style.fg(key_color)),
-        Span::styled(checkbox, style.fg(value_color)),
-        Span::styled(" (Kitty only)", Style::default().fg(Color::DarkGray)),
-    ]);
-    frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 2, height: 1, ..inner });
-
-    // Image Path (index 3)
-    let selected = focused && app.index == 3;
-    let style = if selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
-    let path_value = if app.editing && selected {
-        format_edit_buffer(&app.edit_buffer, app.cursor_pos)
-    } else {
-        app.image_path.clone().unwrap_or_else(|| "(none)".to_string())
-    };
-    let display = truncate_path(&path_value, value_width.saturating_sub(2));
-    let line = Line::from(vec![
-        Span::styled("Image Path:  ", style.fg(key_color)),
-        Span::styled(format!("[{}]", display), style.fg(value_color)),
-    ]);
-    frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 3, height: 1, ..inner });
-
-    // Art Position (index 4)
-    let selected = focused && app.index == 4;
     let style = if selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
     let pos_label = match app.art_position {
         crate::configloader::ArtPosition::Left => "Left",
@@ -295,7 +292,7 @@ fn draw_art_box(
         Span::styled("Art Position:", style.fg(key_color)),
         Span::styled(format!("◀ {:^12} ▶", pos_label), style.fg(value_color)),
     ]);
-    frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 4, height: 1, ..inner });
+    frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 2, height: 1, ..inner });
 }
 
 /// Draw the toggle grid with Core, Hardware, and Userspace columns
@@ -697,6 +694,9 @@ fn truncate_path(path: &str, max_len: usize) -> String {
     if path.len() <= max_len {
         format!("{:width$}", path, width = max_len)
     } else {
-        format!("...{}", &path[path.len().saturating_sub(max_len.saturating_sub(3))..])
+        let chars: Vec<char> = path.chars().collect();
+        let take = max_len.saturating_sub(3);
+        let start = chars.len().saturating_sub(take);
+        format!("...{}", chars[start..].iter().collect::<String>())
     }
 }

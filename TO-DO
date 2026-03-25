@@ -7,11 +7,7 @@ fix :
 20. add windows support.
 21. add bsd support (complete)
 22. fix linux specific bugs
-23. drop musl ?
-24. add nerd font for not charging battery too.
 25. add more features :
     (d) optional cowsay+fortune integration (dynamicall generated + random)
     (e) add more box styles
-    (f) fix GIF support
-    (g) fix image not following left or right ( image remains left , rest renders properly )
-26. merge Art Path & image part into 1 , remvoe the kitty only thing + add dynamic warning in its place
+    (f) fix/add GIF support

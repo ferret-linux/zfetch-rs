@@ -97,17 +97,15 @@ impl App {
                 }
                 _ => {}
             },
-            FocusArea::Art => match self.index {
-                0 => {
-                    self.cycle_os_art_prev();
-                    self.update_preview();
+            FocusArea::Art => {
+                let builtin = !self.image && self.custom_art.is_none();
+                match self.index {
+                    0 => self.cycle_art_mode_prev(),
+                    1 if builtin => self.cycle_os_art_prev(),
+                    2 => { self.cycle_art_position(); self.update_preview(); }
+                    _ => {}
                 }
-                4 => {
-                    self.cycle_art_position();
-                    self.update_preview();
-                }
-                _ => {}
-            },
+            }
             _ => {}
         }
     }
@@ -137,17 +135,15 @@ impl App {
                 }
                 _ => {}
             },
-            FocusArea::Art => match self.index {
-                0 => {
-                    self.cycle_os_art_next();
-                    self.update_preview();
+            FocusArea::Art => {
+                let builtin = !self.image && self.custom_art.is_none();
+                match self.index {
+                    0 => self.cycle_art_mode_next(),
+                    1 if builtin => self.cycle_os_art_next(),
+                    2 => { self.cycle_art_position(); self.update_preview(); }
+                    _ => {}
                 }
-                4 => {
-                    self.cycle_art_position();
-                    self.update_preview();
-                }
-                _ => {}
-            },
+            }
             _ => {}
         }
     }
@@ -177,23 +173,24 @@ impl App {
                 }
                 _ => {}
             },
-            FocusArea::Art => match self.index {
-                0 => {
-                    self.cycle_os_art_next();
-                    self.update_preview();
+            FocusArea::Art => {
+                let builtin = !self.image && self.custom_art.is_none();
+                match self.index {
+                    0 => self.cycle_art_mode_next(),
+                    1 if builtin => self.cycle_os_art_next(),
+                    1 => {
+                        // Source row — open editor with current path
+                        let initial = if self.image {
+                            self.image_path.clone().unwrap_or_default()
+                        } else {
+                            self.custom_art.clone().unwrap_or_default()
+                        };
+                        self.start_editing(initial);
+                    }
+                    2 => { self.cycle_art_position(); self.update_preview(); }
+                    _ => {}
                 }
-                1 => self.start_editing(self.custom_art.clone().unwrap_or_default()),
-                2 => {
-                    self.image = !self.image;
-                    self.update_preview();
-                }
-                3 => self.start_editing(self.image_path.clone().unwrap_or_default()),
-                4 => {
-                    self.cycle_art_position();
-                    self.update_preview();
-                }
-                _ => {}
-            },
+            }
             FocusArea::Core => {
                 match self.index {
                     0 => self.core.os = !self.core.os,
@@ -297,7 +294,7 @@ impl App {
         if point_in_rect(x, y, layout.art_box) {
             self.focus = FocusArea::Art;
             let item_y = y.saturating_sub(layout.art_box.y + 1);
-            self.index = (item_y as usize).min(FocusArea::Art.max_index());
+            self.index = (item_y as usize).min(2);
             self.handle_select();
             return;
         }
