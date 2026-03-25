@@ -326,6 +326,6 @@ pub fn packages() -> String {
     if counts.is_empty() {
         "unknown".to_string()
     } else {
-        counts.join(",")
+        counts.join(" | ")
     }
 }
