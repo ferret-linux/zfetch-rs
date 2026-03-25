@@ -7,10 +7,7 @@ fix :
 20. add windows support.
 21. add bsd support (complete)
 22. fix linux specific bugs
-23. drop musl ?
-24. add nerd font for not charging battery too.
 25. add more features :
-    (b) Distrobox Containers Detection
     (d) optional cowsay+fortune integration (dynamicall generated + random)
     (e) add more box styles
-    (f) fix GIF support
+    (f) fix/add GIF support

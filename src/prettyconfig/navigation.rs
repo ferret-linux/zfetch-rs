@@ -17,7 +17,7 @@ use ratatui::style::Color;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FocusArea {
     General,   // Theme, Nerd Fonts toggle
-    Art,       // OS Art, Custom Art path, Image toggle, Image path
+    Art,       // Mode (Built-in / Custom Art / Image), Source path, Art Position
     Core,      // Core toggles
     Hardware,  // Hardware toggles
     Userspace, // Userspace toggles
@@ -47,7 +47,7 @@ impl FocusArea {
     pub fn max_index(self) -> usize {
         match self {
             Self::General => 4,   // Theme, Nerd Fonts, Box Style, Border Lines, GPU Display
-            Self::Art => 4,       // OS Art, Custom Art, Image Enabled, Image Path
+            Self::Art => 3,       // upper bound; actual max is dynamic (see move_down)
             Self::Core => 4,      // OS, Kernel, Uptime, Init, OS Age
             Self::Hardware => 5,  // CPU, GPU, Memory, Storage, Battery, Screen
             Self::Userspace => 6, // Packages, Terminal, Shell, WM, UI, Editor, Term Font
@@ -225,25 +225,16 @@ impl App {
     }
 
     pub fn move_down(&mut self) {
-        if self.index < self.focus.max_index() {
+        let max = if self.focus == FocusArea::Art {
+            // Built-in: Mode(0) + OS Art(1) + Art Position(2)
+            // Custom Art / Image: Mode(0) + Source(1) + Art Position(2)
+            2
+        } else {
+            self.focus.max_index()
+        };
+        if self.index < max {
             self.index += 1;
         }
-    }
-
-    pub fn cycle_os_art_next(&mut self) {
-        self.os_art = match &self.os_art {
-            OsArtSetting::Disabled => OsArtSetting::Auto,
-            OsArtSetting::Auto => OsArtSetting::Disabled,
-            OsArtSetting::Specific(_) => OsArtSetting::Disabled,
-        };
-    }
-
-    pub fn cycle_os_art_prev(&mut self) {
-        self.os_art = match &self.os_art {
-            OsArtSetting::Disabled => OsArtSetting::Auto,
-            OsArtSetting::Auto => OsArtSetting::Disabled,
-            OsArtSetting::Specific(_) => OsArtSetting::Auto,
-        };
     }
 
     pub fn cycle_nerd_fonts_next(&mut self) {
@@ -299,6 +290,53 @@ impl App {
             GpuDisplayMode::Both => GpuDisplayMode::Auto,
         };
         self.reload_sections_for_gpu_display();
+    }
+
+    pub fn cycle_os_art_next(&mut self) {
+        self.os_art = match &self.os_art {
+            OsArtSetting::Disabled => OsArtSetting::Auto,
+            OsArtSetting::Auto => OsArtSetting::Disabled,
+            OsArtSetting::Specific(_) => OsArtSetting::Disabled,
+        };
+        self.update_preview();
+    }
+
+    pub fn cycle_os_art_prev(&mut self) {
+        self.os_art = match &self.os_art {
+            OsArtSetting::Disabled => OsArtSetting::Auto,
+            OsArtSetting::Auto => OsArtSetting::Disabled,
+            OsArtSetting::Specific(_) => OsArtSetting::Auto,
+        };
+        self.update_preview();
+    }
+
+    pub fn cycle_art_mode_next(&mut self) {
+        // Cycle: Built-in → Custom Art → Image → Built-in
+        if self.image {
+            // Image → Built-in
+            self.image = false;
+            self.custom_art = None;
+        } else if self.custom_art.is_some() {
+            // Custom Art → Image
+            self.image = true;
+        } else {
+            // Built-in → Custom Art (start with empty path)
+            self.custom_art = Some(String::new());
+        }
+        self.update_preview();
+    }
+
+    pub fn cycle_art_mode_prev(&mut self) {
+        // Cycle: Built-in → Image → Custom Art → Built-in
+        if self.image {
+            self.image = false;
+            self.custom_art = Some(String::new());
+        } else if self.custom_art.is_some() {
+            self.custom_art = None;
+        } else {
+            self.image = true;
+        }
+        self.update_preview();
     }
 
     pub fn cycle_art_position(&mut self) {
@@ -387,12 +425,13 @@ impl App {
         };
 
         match self.focus {
+            // Source is always index 1 when visible (only shown for Custom Art or Image)
             FocusArea::Art if self.index == 1 => {
-                self.custom_art = value;
-                self.update_preview();
-            }
-            FocusArea::Art if self.index == 3 => {
-                self.image_path = value;
+                if self.image {
+                    self.image_path = value;
+                } else {
+                    self.custom_art = value;
+                }
                 self.update_preview();
             }
             _ => {}

@@ -140,7 +140,17 @@ fn render_side_by_side_with_image(
     // Save cursor position at end of output, then move into image box
     print!("\x1b7"); // Save cursor (DECSC)
     print!("\x1b[{}A", total_output_lines - 1); // Move up to first content row
-    print!("\x1b[2C"); // Move right past left border
+
+    // Move horizontally depending on layout
+    if art_right {
+        // Image is on the RIGHT → skip sections + gap + left border
+        let sections_width = sections_box_visual_width;
+        print!("\x1b[{}C", sections_width + 1 + 2);
+    } else {
+        // Image is on the LEFT → just skip left border
+        print!("\x1b[2C");
+    }
+
     let _ = std::io::stdout().flush();
 
     // --- step 5: Display the image using Kitty protocol ---
