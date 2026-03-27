@@ -32,8 +32,7 @@ jobs:
           VERSION=${{ env.VERSION }}
           BINARY_NAME="${PROGRAM}-${VERSION}-${TARGET}"
           echo "Building $BINARY_NAME..."
-
-          mkdir -p release_assets
+          mkdir -p release_assets/${PROGRAM}/${TARGET}
 
           if [[ "$TARGET" == "aarch64-unknown-linux-musl" ]]; then
             echo "Building ARM musl in Docker..."
@@ -41,74 +40,63 @@ jobs:
               cd /src/$PROGRAM &&
               cargo build --release --locked --target aarch64-unknown-linux-musl
             "
-            mv "$PROGRAM/target/aarch64-unknown-linux-musl/release/$PROGRAM" "release_assets/$BINARY_NAME" || true
+            mv "$PROGRAM/target/aarch64-unknown-linux-musl/release/$PROGRAM" "release_assets/${PROGRAM}/${TARGET}/$BINARY_NAME"
           else
             echo "Building x86_64 musl locally..."
-            rustup target add $TARGET || true
+            rustup target add $TARGET
             sudo apt-get update
             sudo apt-get install -y musl-tools
             export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc
-            cargo build --release --locked --target $TARGET || exit 1
-            mv "$PROGRAM/target/$TARGET/release/$PROGRAM" "release_assets/$BINARY_NAME"
+            cargo build --release --locked --target $TARGET
+            mv "$PROGRAM/target/$TARGET/release/$PROGRAM" "release_assets/${PROGRAM}/${TARGET}/$BINARY_NAME"
           fi
 
-          strip "release_assets/$BINARY_NAME" || true
+          strip "release_assets/${PROGRAM}/${TARGET}/$BINARY_NAME" || true
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}
-          path: release_assets/${{ env.BINARY_NAME }}
-
-  verify-builds:
-    runs-on: ubuntu-latest
-    needs: build
-    outputs:
-      all_ok: ${{ steps.check.outputs.all_ok }}
-    steps:
-      - name: Verify all artifacts exist
-        id: check
-        run: |
-          EXPECTED_COUNT=6 # 3 programs x 2 targets
-          ACTUAL_COUNT=$(gh run artifacts list --json name --jq '.[] | .name' | wc -l)
-          echo "Found $ACTUAL_COUNT artifacts, expecting $EXPECTED_COUNT"
-          if [ "$ACTUAL_COUNT" -ne "$EXPECTED_COUNT" ]; then
-            echo "Not all builds succeeded."
-            echo "all_ok=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          echo "all_ok=true" >> $GITHUB_OUTPUT
+          name: ${{ matrix.program }}-${{ matrix.target }}
+          path: release_assets/${{ matrix.program }}/${{ matrix.target }}/
 
   create-release:
     runs-on: ubuntu-latest
-    needs: verify-builds
-    if: needs.verify-builds.outputs.all_ok == 'true'
+    needs: build
     permissions:
       contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Determine release version and tag
-        id: version
-        run: |
-          VERSION=$(grep '^version' zgpu-rs/Cargo.toml | head -n1 | cut -d '"' -f2)
-          TAG="release-$(date +%d-%m-%y)"
-          RELEASE_NAME="zutils $VERSION ($TAG)"
-          git tag $TAG
-          git push origin $TAG
-          echo "TAG=$TAG" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: release_assets
+
+      - name: Verify all builds succeeded
+        run: |
+          EXPECTED_COUNT=6 # 3 programs x 2 targets
+          ACTUAL_COUNT=$(find release_assets -type f | wc -l)
+          echo "Found $ACTUAL_COUNT built binaries, expecting $EXPECTED_COUNT"
+          if [ "$ACTUAL_COUNT" -ne "$EXPECTED_COUNT" ]; then
+            echo "ERROR: Some builds failed, aborting release."
+            exit 1
+          fi
+
+      - name: Create Git tag
+        id: tag
+        run: |
+          VERSION=$(grep '^version' zgpu-rs/Cargo.toml | head -n1 | cut -d '"' -f2)
+          TAG="release-$(date +%d-%m-%y)"
+          git tag $TAG
+          git push origin $TAG
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "RELEASE_NAME=zutils $VERSION ($TAG)" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
           name: ${{ env.RELEASE_NAME }}
-          files: release_assets/*
+          files: release_assets/**/*
