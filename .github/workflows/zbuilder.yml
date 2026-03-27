@@ -1,29 +1,18 @@
-name: Build and Release
+name: Build zutils Release
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - stable
-      - unstable
-    paths:
-      - "Cargo.lock"
 
 jobs:
-  zbuilder:
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            suffix: glibc-x86_64
-          - target: x86_64-unknown-linux-musl
-            suffix: musl-x86_64
-          - target: aarch64-unknown-linux-gnu
-            suffix: glibc-aarch64
-          - target: aarch64-unknown-linux-musl
-            suffix: musl-aarch64
+        program: [zgpu-rs, zrun-rs, zync-rs]
+        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+    env:
+      CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,192 +20,95 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Get Current Version and Branch
+      - name: Get Program Version
         run: |
-          VERSION=$(grep '^version' Cargo.toml | head -n1 | cut -d '"' -f2)
-          BRANCH=${GITHUB_REF#refs/heads/}
-          if [ "$BRANCH" = "unstable" ]; then
-            BINARY_NAME="zfetch-${VERSION}-unstable-${{ matrix.suffix }}"
+          VERSION=$(grep '^version' ${{ matrix.program }}/Cargo.toml | head -n1 | cut -d '"' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build binary
+        run: |
+          PROGRAM=${{ matrix.program }}
+          TARGET=${{ matrix.target }}
+          VERSION=${{ env.VERSION }}
+          BINARY_NAME="${PROGRAM}-${VERSION}-${TARGET}"
+          echo "Building $BINARY_NAME..."
+
+          mkdir -p release_assets
+
+          if [[ "$TARGET" == "aarch64-unknown-linux-musl" ]]; then
+            echo "Building ARM musl in Docker..."
+            docker run --rm -v $PWD:/src rustembedded/cross:aarch64-unknown-linux-musl-0.2.2 sh -c "
+              cd /src/$PROGRAM &&
+              cargo build --release --locked --target aarch64-unknown-linux-musl
+            "
+            mv "$PROGRAM/target/aarch64-unknown-linux-musl/release/$PROGRAM" "release_assets/$BINARY_NAME" || true
           else
-            BINARY_NAME="zfetch-${VERSION}-${{ matrix.suffix }}"
+            echo "Building x86_64 musl locally..."
+            rustup target add $TARGET || true
+            sudo apt-get update
+            sudo apt-get install -y musl-tools
+            export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc
+            cargo build --release --locked --target $TARGET || exit 1
+            mv "$PROGRAM/target/$TARGET/release/$PROGRAM" "release_assets/$BINARY_NAME"
           fi
+
+          strip "release_assets/$BINARY_NAME" || true
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
-      - name: Install targets and cross-compile tools
-        run: |
-          rustup target add ${{ matrix.target }}
-          sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu
-
-      - name: Build Release Binary
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
-        run: cargo build --release --locked --target ${{ matrix.target }}
-
-      - name: Rename and Strip Binary
-        run: |
-          mv target/${{ matrix.target }}/release/zfetch ${{ env.BINARY_NAME }}
-          strip ${{ env.BINARY_NAME }} || true
-
-      - name: Upload binary as artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BINARY_NAME }}
-          path: ${{ env.BINARY_NAME }}
+          path: release_assets/${{ env.BINARY_NAME }}
 
-  verify-versions:
-    needs: zbuilder
+  verify-builds:
     runs-on: ubuntu-latest
+    needs: build
     outputs:
-      version: ${{ steps.check.outputs.version }}
+      all_ok: ${{ steps.check.outputs.all_ok }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Check Cargo.toml and PKGBUILD versions match
+      - name: Verify all artifacts exist
         id: check
         run: |
-          CARGO_VERSION=$(grep '^version' Cargo.toml | head -n1 | cut -d '"' -f2)
-          PKGBUILD_VERSION=$(grep '^pkgver=' PKGBUILD | cut -d '=' -f2)
-          echo "Cargo.toml version: $CARGO_VERSION"
-          echo "PKGBUILD version:   $PKGBUILD_VERSION"
-          if [ "$CARGO_VERSION" != "$PKGBUILD_VERSION" ]; then
-            echo "ERROR: Version mismatch! Cargo.toml=$CARGO_VERSION PKGBUILD=$PKGBUILD_VERSION"
-            exit 1
+          EXPECTED_COUNT=6 # 3 programs x 2 targets
+          ACTUAL_COUNT=$(gh run artifacts list --json name --jq '.[] | .name' | wc -l)
+          echo "Found $ACTUAL_COUNT artifacts, expecting $EXPECTED_COUNT"
+          if [ "$ACTUAL_COUNT" -ne "$EXPECTED_COUNT" ]; then
+            echo "Not all builds succeeded."
+            echo "all_ok=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
-          echo "version=$CARGO_VERSION" >> $GITHUB_OUTPUT
+          echo "all_ok=true" >> $GITHUB_OUTPUT
 
-  create-tag:
-    needs: verify-versions
+  create-release:
     runs-on: ubuntu-latest
+    needs: verify-builds
+    if: needs.verify-builds.outputs.all_ok == 'true'
     permissions:
       contents: write
-    outputs:
-      tag: ${{ steps.info.outputs.tag }}
-      release_name: ${{ steps.info.outputs.release_name }}
-      prerelease: ${{ steps.info.outputs.prerelease }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create Release Tag and Release
-        id: info
+      - name: Determine release version and tag
+        id: version
         run: |
-          VERSION=${{ needs.verify-versions.outputs.version }}
-          BRANCH=${GITHUB_REF#refs/heads/}
-          if [ "$BRANCH" = "unstable" ]; then
-            TAG="v${VERSION}-unstable"
-            RELEASE_NAME="zfetch v${VERSION} (unstable)"
-            PRERELEASE="true"
-          else
-            TAG="v${VERSION}"
-            RELEASE_NAME="zfetch v${VERSION}"
-            PRERELEASE="false"
-          fi
+          VERSION=$(grep '^version' zgpu-rs/Cargo.toml | head -n1 | cut -d '"' -f2)
+          TAG="release-$(date +%d-%m-%y)"
+          RELEASE_NAME="zutils $VERSION ($TAG)"
           git tag $TAG
           git push origin $TAG
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
-          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.info.outputs.tag }}
-          name: ${{ steps.info.outputs.release_name }}
-          prerelease: ${{ steps.info.outputs.prerelease }}
-
-  upload-binaries:
-    needs: create-tag
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            suffix: glibc-x86_64
-          - target: x86_64-unknown-linux-musl
-            suffix: musl-x86_64
-          - target: aarch64-unknown-linux-gnu
-            suffix: glibc-aarch64
-          - target: aarch64-unknown-linux-musl
-            suffix: musl-aarch64
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Get binary name
-        run: |
-          VERSION=${{ needs.create-tag.outputs.tag }}
-          VERSION=${VERSION#v}
-          BRANCH=${GITHUB_REF#refs/heads/}
-          if [ "$BRANCH" = "unstable" ]; then
-            VERSION=${VERSION%-unstable}
-            BINARY_NAME="zfetch-${VERSION}-unstable-${{ matrix.suffix }}"
-          else
-            BINARY_NAME="zfetch-${VERSION}-${{ matrix.suffix }}"
-          fi
-          echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
-
-      - name: Download binary artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}
+          path: release_assets
 
-      - name: Upload to Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.create-tag.outputs.tag }}
-          files: ${{ env.BINARY_NAME }}
-
-  publish-aur:
-    needs: [create-tag, upload-binaries]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/stable'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: stable
-
-      - name: Setup SSH for AUR
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/aur_key
-          chmod 600 ~/.ssh/aur_key
-          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
-          cat >> ~/.ssh/config << EOF
-          Host aur.archlinux.org
-            IdentityFile ~/.ssh/aur_key
-            User aur
-          EOF
-
-      - name: Clone AUR repo
-        run: |
-          git clone ssh://aur@aur.archlinux.org/zfetch-rs.git ~/aur
-          sudo chown -R $USER:$USER ~/aur
-
-      - name: Copy PKGBUILD from repo
-        run: cp PKGBUILD ~/aur/PKGBUILD
-
-      - name: Generate .SRCINFO
-        run: |
-          docker run --rm -v ~/aur:/pkg archlinux:latest bash -c "
-            pacman -Sy --noconfirm pacman-contrib &&
-            useradd -m builder &&
-            chown -R builder /pkg &&
-            su builder -c 'cd /pkg && makepkg --printsrcinfo > .SRCINFO'
-          "
-
-      - name: Fix permissions after docker
-        run: sudo chown -R $USER:$USER ~/aur
-
-      - name: Push to AUR
-        run: |
-          cd ~/aur
-          git config user.name "zodium-project"
-          git config user.email "dev.zodium.project@gmail.com"
-          git add PKGBUILD .SRCINFO
-          git diff --cached --quiet || git commit -m "Update to ${{ needs.create-tag.outputs.tag }}"
-          git push
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          files: release_assets/*
