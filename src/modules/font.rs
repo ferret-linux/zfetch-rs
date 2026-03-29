@@ -123,10 +123,10 @@ fn font_from_foot(config_home: &str) -> Option<String> {
     None
 }
 
-// Parse Ghostty config (~/.config/ghostty/config)
+// Parse Ghostty config (~/.config/ghostty/config.ghostty)
 fn font_from_ghostty(config_home: &str) -> Option<String> {
     if config_home.is_empty() { return None; }
-    let path = format!("{}/ghostty/config", config_home);
+    let path = format!("{}/ghostty/config.ghostty", config_home);
     let content = fs::read_to_string(path).ok()?;
 
     for line in content.lines() {
