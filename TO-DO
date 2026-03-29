@@ -14,6 +14,5 @@ fix :
 28. always use nerdfonts on wezterm , ghostty regardless of font ( they have build in nerdfonts )
 30. add systemwide config support /etc/zfetch/config.toml ( zfetch wont write it , but if its present zfetch will use it unless there is a user conf too)
 32. add a setting to allow user to choose border/round radius.
-33. fix border lines (double) not being rounded even when rounded option is selected.
 34. add no box/neofetch/fastfetch like look option ( zfetch --neofetch ) [similar to fastfetch --neofetch]
 35. add a terminal colors module ( shows current 8 primary set colors at bottom of userspace module section , give choice between bullet,circle,box for the shape )
