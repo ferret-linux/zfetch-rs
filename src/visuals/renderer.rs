@@ -56,9 +56,13 @@ fn get_box_chars() -> (&'static str, &'static str, &'static str, &'static str, &
     let box_style = get_box_style();
     let border_line_style = get_border_line_style();
 
-    // Use double-line corners when double lines are selected
+    // Use double-line corners when double lines are selected, but respect rounded style
     let (top_left, top_right, bottom_left, bottom_right) = if border_line_style == BorderLineStyle::Double {
-        box_style.corners_double()
+        if box_style == BoxStyle::Rounded {
+            box_style.corners()  // rounded has no double variant, fall back to rounded corners
+        } else {
+            box_style.corners_double()
+        }
     } else {
         box_style.corners()
     };

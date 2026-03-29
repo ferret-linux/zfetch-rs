@@ -26,6 +26,11 @@ pub fn kernel() -> String {
                     })
                     .map(|(rest, _)| rest)
                     .unwrap_or(s);
+                // Strip numeric-only build suffix (e.g. -200 in 6.14.6-200) but preserve named ones (e.g. -cachyos)
+                let s = s.rsplit_once('-')
+                    .filter(|(_, suffix)| suffix.bytes().all(|b| b.is_ascii_digit()))
+                    .map(|(rest, _)| rest)
+                    .unwrap_or(s);
                 s.to_string()
             })
             .unwrap_or_else(|| UNKNOWN.to_string())

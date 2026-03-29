@@ -1,13 +1,15 @@
 fix :
-8. fix os_age & package counts on many distros. ( void , fsd etc )
+8. fix os_age & package counts on many distros. ( void , bsd etc )
 13. make logic faster in (gpu)
 15. os-age on arm void ?
 16. better os-age module ?
 18. make it have better AMD gpu names ( amd sucks at naming their gpus in sysfs maake it use vulkaninfo if it detects / in name)
 20. add windows support.
-21. add bsd support (complete)
+21. add bsd support
 22. fix linux specific bugs
 25. add more features :
     (d) optional cowsay+fortune integration (dynamicall generated + random)
     (e) add more box styles
     (f) fix/add GIF support
+28. always use nerdfonts on wezterm , ghostty regardless of font ( they have build in nerdfonts )
+35. add a terminal colors module ( shows current 8 primary set colors at bottom of userspace module section , give choice between bullet,circle,box for the shape )
