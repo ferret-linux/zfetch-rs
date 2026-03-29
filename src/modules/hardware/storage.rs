@@ -72,15 +72,35 @@ pub fn storage() -> String {
         if total_gb >= 1000.0 {
             let total_tb = total_gb / 1000.0;
             // Trim .00 if it's a whole number (e.g., 1.00TB -> 1TB)
-            let total_str = if (total_tb - total_tb.round()).abs() < 0.005 {
-                format!("{}TB", total_tb.round() as u64)
+            let total_str = if (total_tb - total_tb.floor()).abs() < 0.05 {
+                format!("{}TB", total_tb.floor() as u64)
             } else {
-                format!("{:.2}TB", total_tb)
+                format!("{:.1}TB", total_tb)
             };
-            return format!("{} {:.0}GB/{}", bar, used_gb, total_str);
+            let used_str = if used_gb >= 900.0 {
+                let used_tb = used_gb / 1000.0;
+                if (used_tb - used_tb.floor()).abs() < 0.05 {
+                    format!("{}TB", used_tb.floor() as u64)
+                } else {
+                    format!("{:.1}TB", used_tb)
+                }
+            } else {
+                format!("{:.0}GB", used_gb)
+            };
+            return format!("{} {}/{}", bar, used_str, total_str);
         }
 
-        return format!("{} {:.0}GB/{:.0}GB", bar, used_gb, total_gb);
+        let used_str = if used_gb >= 900.0 {
+            let used_tb = used_gb / 1000.0;
+            if (used_tb - used_tb.floor()).abs() < 0.05 {
+                format!("{}TB", used_tb.floor() as u64)
+            } else {
+                format!("{:.1}TB", used_tb)
+            }
+        } else {
+            format!("{:.0}GB", used_gb)
+        };
+        return format!("{} {}/{:.0}GB", bar, used_str, total_gb);
     }
     "unknown".to_string()
 }

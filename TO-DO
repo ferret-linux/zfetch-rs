@@ -1,20 +1,17 @@
 fix :
-8. fix os_age & package counts on many distros. ( void , fsd etc )
+8. fix os_age & package counts on many distros. ( void , bsd etc )
 13. make logic faster in (gpu)
 15. os-age on arm void ?
 16. better os-age module ?
 18. make it have better AMD gpu names ( amd sucks at naming their gpus in sysfs maake it use vulkaninfo if it detects / in name)
 20. add windows support.
-21. add bsd support (complete)
+21. add bsd support
 22. fix linux specific bugs
 25. add more features :
     (d) optional cowsay+fortune integration (dynamicall generated + random)
     (e) add more box styles
     (f) fix/add GIF support
-26. fix ghostty integration (font detection).
-27. fix it showing kenrel as 6.19.9-200 ( we want 6.19.9) but should preserve names like 6.19.9-cachyos .
 28. always use nerdfonts on wezterm , ghostty regardless of font ( they have build in nerdfonts )
-29. allow current used space ( used side of storage module ) to show data in TB(upto 1 decimal)  it exceeds 900GB.
 30. add systemwide config support /etc/zfetch/config.toml ( zfetch wont write it , but if its present zfetch will use it unless there is a user conf too)
 32. add a setting to allow user to choose border/round radius.
 33. fix border lines (double) not being rounded even when rounded option is selected.
