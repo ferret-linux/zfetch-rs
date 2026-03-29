@@ -27,6 +27,9 @@ const ASCII_ART_OMARCHY: &str = include_str!("../assets/distros/full/omarchy.txt
 const ASCII_ART_MINT: &str = include_str!("../assets/distros/full/mint.txt");
 const ASCII_ART_NOBARA: &str = include_str!("../assets/distros/full/nobara.txt");
 const ASCII_ART_ZODIUM: &str = include_str!("../assets/distros/full/zodium.txt");
+const ASCII_ART_ALMA: &str = include_str!("../assets/distros/full/alma.txt");
+const ASCII_ART_RHEL: &str = include_str!("../assets/distros/full/rhel.txt");
+const ASCII_ART_OPENSUSE: &str = include_str!("../assets/distros/full/opensuse.txt");
 
 // Meme versions
 const ASCII_ART_ARCHMEME: &str = include_str!("../assets/distros/meme/arch-meme.txt");
@@ -48,6 +51,9 @@ const ASCII_ART_OMARCHY_SMALL: &str = include_str!("../assets/distros/small/omar
 const ASCII_ART_MINT_SMALL: &str = include_str!("../assets/distros/small/mint-small.txt");
 const ASCII_ART_NOBARA_SMALL: &str = include_str!("../assets/distros/small/nobara-small.txt");
 const ASCII_ART_ZODIUM_SMALL: &str = include_str!("../assets/distros/small/zodium-small.txt");
+const ASCII_ART_ALMA_SMALL: &str = include_str!("../assets/distros/small/alma-small.txt");
+const ASCII_ART_RHEL_SMALL: &str = include_str!("../assets/distros/small/rhel-small.txt");
+const ASCII_ART_OPENSUSE_SMALL: &str = include_str!("../assets/distros/small/opensuse-small.txt");
 
 // Render the wide ASCII art logo and return lines as a Vec
 pub fn get_wide_logo_lines() -> Vec<String> {
@@ -100,6 +106,12 @@ pub fn get_os_logo_lines(os_name: &str) -> Option<Vec<String>> {
         Some(ASCII_ART_NOBARA)
     } else if os_lower.contains("zodium") {
         Some(ASCII_ART_ZODIUM)
+    } else if os_lower.contains("alma") {
+        Some(ASCII_ART_ALMA)
+    } else if os_lower.contains("rhel") {
+        Some(ASCII_ART_RHEL)
+    } else if os_lower.contains("opensuse") {
+        Some(ASCII_ART_OPENSUSE)
     } else {
         None
     };
@@ -149,6 +161,12 @@ pub fn get_os_logo_lines_small(os_name: &str) -> Option<Vec<String>> {
         Some(ASCII_ART_NOBARA_SMALL)
     } else if os_lower.contains("zodium") {
         Some(ASCII_ART_ZODIUM_SMALL)
+    } else if os_lower.contains("alma") {
+        Some(ASCII_ART_ALMA_SMALL)
+    } else if os_lower.contains("rhel") {
+        Some(ASCII_ART_RHEL_SMALL)
+    } else if os_lower.contains("opensuse") {
+        Some(ASCII_ART_OPENSUSE_SMALL)
     } else {
         None
     };
