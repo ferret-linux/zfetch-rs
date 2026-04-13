@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use memchr::{memchr_iter, memmem};
 
 use crate::modules::font::{find_font, is_nerd_font};
+use crate::modules::userspace::terminal;
 
 // Cache for font detection - only computed once
 static CACHED_FONT: OnceLock<String> = OnceLock::new();
@@ -28,7 +29,14 @@ pub fn get_cached_is_nerd_font() -> bool {
         1 => true,  // Force on
         2 => false, // Force off
         _ => {
-            // Auto-detect from font
+            // Check if terminal is Ghostty or WezTerm (they support nerd fonts natively)
+            let term = terminal();
+            let term_lower = term.to_lowercase();
+            if term_lower.contains("ghostty") || term_lower.contains("wezterm") {
+                return true; // These terminals have built-in nerd font support
+            }
+            
+            // For other terminals, detect from font
             *CACHED_IS_NERD.get_or_init(|| {
                 let font = CACHED_FONT.get_or_init(find_font);
                 is_nerd_font(font)
