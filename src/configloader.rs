@@ -225,14 +225,7 @@ impl BoxStyle {
         }
     }
 
-/*     pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Rounded => "rounded",
-            Self::Square => "square",
-        }
-    } */
-
-    // Get the box drawing characters for this style (for solid/dotted lines)
+// Get the box drawing characters for this style (for solid/dotted lines)
     pub fn corners(&self) -> (&'static str, &'static str, &'static str, &'static str) {
         match self {
             Self::Rounded => ("╭", "╮", "╰", "╯"),
@@ -240,9 +233,8 @@ impl BoxStyle {
         }
     }
 
-    // Get the box drawing characters for double lines
+    // Get the box drawing characters for double lines (always square-style, no rounded double variant)
     pub fn corners_double(&self) -> (&'static str, &'static str, &'static str, &'static str) {
-        // Double lines always use square-style corners (rounded doesn't exist for double lines)
         ("╔", "╗", "╚", "╝")
     }
 }
@@ -266,15 +258,7 @@ impl BorderLineStyle {
         }
     }
 
-/*     pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Solid => "solid",
-            Self::Dotted => "dotted",
-            Self::Double => "double",
-        }
-    } */
-
-    // Get the horizontal and vertical line characters for this style
+// Get the horizontal and vertical line characters for this style
     pub fn lines(&self) -> (&'static str, &'static str) {
         match self {
             Self::Solid => ("─", "│"),

@@ -6,7 +6,7 @@ use std::io::{BufRead, BufReader};
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU8, Ordering};
 
-use memchr::{memchr_iter, memmem};
+use memchr::memchr_iter;
 
 use crate::modules::font::{find_font, is_nerd_font};
 use crate::modules::userspace::terminal;
@@ -14,6 +14,7 @@ use crate::modules::userspace::terminal;
 // Cache for font detection - only computed once
 static CACHED_FONT: OnceLock<String> = OnceLock::new();
 static CACHED_IS_NERD: OnceLock<bool> = OnceLock::new();
+static CACHED_TERMINAL: OnceLock<String> = OnceLock::new();
 
 // Global nerd font override: 0 = auto, 1 = force on, 2 = force off
 static NERD_FONT_OVERRIDE: AtomicU8 = AtomicU8::new(0);
@@ -30,12 +31,11 @@ pub fn get_cached_is_nerd_font() -> bool {
         2 => false, // Force off
         _ => {
             // Check if terminal is Ghostty or WezTerm (they support nerd fonts natively)
-            let term = terminal();
-            let term_lower = term.to_lowercase();
-            if term_lower.contains("ghostty") || term_lower.contains("wezterm") {
-                return true; // These terminals have built-in nerd font support
+            let term = CACHED_TERMINAL.get_or_init(terminal);
+            if term.contains("Ghostty") || term.contains("WezTerm") {
+                return true;
             }
-            
+
             // For other terminals, detect from font
             *CACHED_IS_NERD.get_or_init(|| {
                 let font = CACHED_FONT.get_or_init(find_font);
@@ -180,89 +180,4 @@ pub fn create_bar(usage_percent: f64) -> String {
     } else {
         create_bar_ascii(usage_percent)
     }
-}
-
-// get the current Noctalia color scheme, yeah this one is just for me :P
-pub fn get_noctalia_scheme() -> Option<String> {
-    let home = std::env::var("HOME").ok()?;
-    let path = format!("{}/.config/noctalia/settings.json", home);
-
-    let content = fs::read(&path).ok()?;
-
-    // Check if useWallpaperColors is enabled
-    if memmem::find(&content, b"\"useWallpaperColors\": true").is_some() {
-        // Return the generation method instead
-        let needle = b"\"generationMethod\"";
-        let pos = memmem::find(&content, needle)?;
-        let after_key = &content[pos + needle.len()..];
-        let colon_pos = memchr::memchr(b':', after_key)?;
-        let after_colon = &after_key[colon_pos + 1..];
-        let quote1 = memchr::memchr(b'"', after_colon)?;
-        let after_quote1 = &after_colon[quote1 + 1..];
-        let quote2 = memchr::memchr(b'"', after_quote1)?;
-        let value = std::str::from_utf8(&after_quote1[..quote2]).ok()?;
-        return Some(capitalize(value));
-    }
-
-    // otherwise return predefinedScheme
-    let needle = b"\"predefinedScheme\"";
-    let pos = memmem::find(&content, needle)?;
-    let after_key = &content[pos + needle.len()..];
-    let colon_pos = memchr::memchr(b':', after_key)?;
-    let after_colon = &after_key[colon_pos + 1..];
-    let quote1 = memchr::memchr(b'"', after_colon)?;
-    let after_quote1 = &after_colon[quote1 + 1..];
-    let quote2 = memchr::memchr(b'"', after_quote1)?;
-    let value = std::str::from_utf8(&after_quote1[..quote2]).ok()?;
-
-    if value.to_lowercase().contains("default") {
-        return None;
-    }
-    Some(value.to_string())
-}
-
-pub fn get_dms_theme() -> Option<String> {
-    let home = std::env::var("HOME").ok()?;
-    let path = format!("{}/.config/DankMaterialShell/settings.json", home);
-
-    // Helper to extract JSON string value after a key using SIMD search
-    fn extract_json_value(content: &[u8], key: &[u8]) -> Option<String> {
-        let pos = memmem::find(content, key)?;
-        let after_key = &content[pos + key.len()..];
-        let colon_pos = memchr::memchr(b':', after_key)?;
-        let after_colon = &after_key[colon_pos + 1..];
-        let quote1 = memchr::memchr(b'"', after_colon)?;
-        let after_quote1 = &after_colon[quote1 + 1..];
-        let quote2 = memchr::memchr(b'"', after_quote1)?;
-        let value_bytes = &after_quote1[..quote2];
-        std::str::from_utf8(value_bytes).ok().map(|s| s.to_string())
-    }
-
-    if let Ok(content) = fs::read(&path) {
-        // Find theme name
-        let theme_name = extract_json_value(&content, b"\"currentThemeName\"");
-
-        if let Some(ref name) = theme_name {
-            // Return None for default scheme
-            if name.to_lowercase().contains("default") {
-                return None;
-            }
-
-            // If theme is "custom", read the custom theme file for the actual name
-            if name.to_lowercase() == "custom" {
-                if let Some(custom_path) = extract_json_value(&content, b"\"customThemeFile\"") {
-                    if let Ok(custom_content) = fs::read(&custom_path) {
-                        // Look for "name" but be careful not to match "currentThemeName"
-                        // Search for standalone "name" key
-                        if let Some(custom_name) = extract_json_value(&custom_content, b"\"name\"") {
-                            return Some(custom_name);
-                        }
-                    }
-                }
-            }
-        }
-
-        return theme_name;
-    }
-    None
 }

@@ -31,13 +31,29 @@ fn get_cache_path(key: &str) -> Option<PathBuf> {
     Some(get_cache_dir()?.join(key))
 }
 
-// Read a cached value. Returns None if cache doesn't exist or refresh is being forced.
+// Cache TTL: 7 days in seconds
+const CACHE_TTL_SECS: u64 = 7 * 24 * 60 * 60;
+
+// Read a cached value. Returns None if cache doesn't exist, is older than TTL, or refresh is forced.
 pub fn read_cache(key: &str) -> Option<String> {
     if should_refresh() {
         return None;
     }
 
     let path = get_cache_path(key)?;
+
+    // Check cache age — invalidate if older than TTL
+    if let Ok(metadata) = fs::metadata(&path) {
+        if let Ok(modified) = metadata.modified() {
+            if let Ok(age) = modified.elapsed() {
+                if age.as_secs() > CACHE_TTL_SECS {
+                    let _ = fs::remove_file(&path);
+                    return None;
+                }
+            }
+        }
+    }
+
     fs::read_to_string(path).ok()
 }
 
