@@ -47,7 +47,7 @@ impl FocusArea {
 
     pub fn max_index(self) -> usize {
         match self {
-            Self::General => 4,   // Theme, Nerd Fonts, Box Style, Border Lines, GPU Display
+            Self::General => 5,   // Theme, Nerd Fonts, Box Style, Border Lines, GPU Display, Color Style
             Self::Art => 3,       // upper bound; actual max is dynamic (see move_down)
             Self::Core => 4,      // OS, Kernel, Uptime, Init, OS Age
             Self::Hardware => 5,  // CPU, GPU, Memory, Storage, Battery, Screen
@@ -350,6 +350,7 @@ impl App {
             ColorSwatchStyle::Box => ColorSwatchStyle::Circle,
         };
         self.userspace.colors_style = self.colors_style;
+        self.reload_sections_for_gpu_display(); // full reload
     }
 
     pub fn cycle_colors_style_prev(&mut self) {
@@ -359,6 +360,7 @@ impl App {
             ColorSwatchStyle::Box => ColorSwatchStyle::Ring,
         };
         self.userspace.colors_style = self.colors_style;
+        self.reload_sections_for_gpu_display(); // full reload
     }
 
     pub fn cycle_art_position(&mut self) {

@@ -95,6 +95,10 @@ impl App {
                     self.cycle_gpu_display_prev();
                     self.update_preview();
                 }
+                5 => {
+                    self.cycle_colors_style_prev();
+                    self.update_preview();
+                }
                 _ => {}
             },
             FocusArea::Art => {
@@ -104,12 +108,6 @@ impl App {
                     1 if builtin => self.cycle_os_art_prev(),
                     2 => { self.cycle_art_position(); self.update_preview(); }
                     _ => {}
-                }
-            }
-            FocusArea::Userspace => {
-                if self.index == 8 {
-                    self.cycle_colors_style_prev();
-                    self.update_preview();
                 }
             }
             _ => {}
@@ -139,6 +137,10 @@ impl App {
                     self.cycle_gpu_display_next();
                     self.update_preview();
                 }
+                5 => {
+                    self.cycle_colors_style_next();
+                    self.update_preview();
+                }
                 _ => {}
             },
             FocusArea::Art => {
@@ -148,12 +150,6 @@ impl App {
                     1 if builtin => self.cycle_os_art_next(),
                     2 => { self.cycle_art_position(); self.update_preview(); }
                     _ => {}
-                }
-            }
-            FocusArea::Userspace => {
-                if self.index == 8 {
-                    self.cycle_colors_style_next();
-                    self.update_preview();
                 }
             }
             _ => {}
@@ -181,6 +177,10 @@ impl App {
                 }
                 4 => {
                     self.cycle_gpu_display_next();
+                    self.update_preview();
+                }
+                5 => {
+                    self.cycle_colors_style_next();
                     self.update_preview();
                 }
                 _ => {}
