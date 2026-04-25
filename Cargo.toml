@@ -23,4 +23,4 @@ unicode-segmentation = "1.13"
 unicode-width = "0.2"
 
 [profile.bench]
-debug = true
+debug = false
