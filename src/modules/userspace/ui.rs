@@ -4,21 +4,38 @@ use std::path::Path;
 use memchr::memmem;
 use crate::helpers::capitalize;
 
+// Names that are WMs, not shells — don't report these as UI
+const WM_NAMES: &[&str] = &[
+    "hyprland", "sway", "niri", "river", "wayfire", "labwc", "dwl",
+    "kwin", "mutter", "openbox", "i3", "bspwm", "dwm", "awesome",
+    "xfwm4", "qtile", "xmonad", "herbstluftwm", "weston",
+];
+
+fn is_wm_name(s: &str) -> bool {
+    let lower = s.to_lowercase();
+    WM_NAMES.iter().any(|wm| lower == *wm)
+}
+
 // Get the active UI/Shell
 pub fn ui() -> String {
     // Check env vars first — single syscall, no /proc scan needed for most users
     if let Ok(desktop) = env::var("XDG_CURRENT_DESKTOP") {
-        match desktop.to_lowercase().as_str() {
-            "kde" | "plasma" => return "Plasma Shell".to_string(),
-            "gnome" => return "Gnome Shell".to_string(),
-            "hyprland" => return "Hyprland".to_string(),
-            "sway" => return "Sway".to_string(),
-            _ => return capitalize(&desktop),
+        let result = match desktop.to_lowercase().as_str() {
+            "kde" | "plasma" => "Plasma Shell".to_string(),
+            "gnome" => "Gnome Shell".to_string(),
+            _ => capitalize(&desktop),
+        };
+        // Skip if it's just a WM name (already shown in WM row)
+        if !is_wm_name(&result) {
+            return result;
         }
     }
 
     if let Ok(session) = env::var("DESKTOP_SESSION") {
-        return capitalize(&session);
+        let result = capitalize(&session);
+        if !is_wm_name(&result) {
+            return result;
+        }
     }
 
     // Fallback: scan /proc for process-based shell detection
