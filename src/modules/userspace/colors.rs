@@ -24,7 +24,7 @@ pub fn colors(style: ColorSwatchStyle) -> String {
     let (swatch, reset) = match style {
         ColorSwatchStyle::Circle => ("●", "\x1b[0m"),
         ColorSwatchStyle::Ring   => ("◉", "\x1b[0m"),
-        ColorSwatchStyle::Box    => ("", "\x1b[0m"),
+        ColorSwatchStyle::Box    => ("■", "\x1b[0m"),
     };
 
     let mut result = String::new();
