@@ -1,6 +1,6 @@
 [package]
 name = "zfetch"
-version = "2.7.1"
+version = "2.8.0"
 edition = "2024"
 
 [profile.release]
@@ -11,10 +11,10 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-clap = { version = "4.6", features = ["derive"] }
+clap = { version = "4.6.1", features = ["derive"] }
 kitty_image = "0.1"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif"] }
-libc = "0.2"
+libc = "0.2.186"
 base64 = "0.22"
 memchr = "2.8"
 ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
@@ -23,4 +23,4 @@ unicode-segmentation = "1.13"
 unicode-width = "0.2"
 
 [profile.bench]
-debug = true
+debug = false

@@ -95,6 +95,10 @@ impl App {
                     self.cycle_gpu_display_prev();
                     self.update_preview();
                 }
+                5 => {
+                    self.cycle_colors_style_prev();
+                    self.update_preview();
+                }
                 _ => {}
             },
             FocusArea::Art => {
@@ -133,6 +137,10 @@ impl App {
                     self.cycle_gpu_display_next();
                     self.update_preview();
                 }
+                5 => {
+                    self.cycle_colors_style_next();
+                    self.update_preview();
+                }
                 _ => {}
             },
             FocusArea::Art => {
@@ -169,6 +177,10 @@ impl App {
                 }
                 4 => {
                     self.cycle_gpu_display_next();
+                    self.update_preview();
+                }
+                5 => {
+                    self.cycle_colors_style_next();
                     self.update_preview();
                 }
                 _ => {}
@@ -217,13 +229,15 @@ impl App {
             }
             FocusArea::Userspace => {
                 match self.index {
-                    0 => self.userspace.packages = !self.userspace.packages,
-                    1 => self.userspace.terminal = !self.userspace.terminal,
-                    2 => self.userspace.shell = !self.userspace.shell,
-                    3 => self.userspace.wm = !self.userspace.wm,
-                    4 => self.userspace.ui = !self.userspace.ui,
-                    5 => self.userspace.editor = !self.userspace.editor,
-                    6 => self.userspace.terminal_font = !self.userspace.terminal_font,
+                    0 => self.userspace.user = !self.userspace.user,
+                    1 => self.userspace.packages = !self.userspace.packages,
+                    2 => self.userspace.terminal = !self.userspace.terminal,
+                    3 => self.userspace.shell = !self.userspace.shell,
+                    4 => self.userspace.wm = !self.userspace.wm,
+                    5 => self.userspace.ui = !self.userspace.ui,
+                    6 => self.userspace.editor = !self.userspace.editor,
+                    7 => self.userspace.terminal_font = !self.userspace.terminal_font,
+                    8 => self.userspace.colors = !self.userspace.colors,
                     _ => {}
                 }
                 self.update_preview();

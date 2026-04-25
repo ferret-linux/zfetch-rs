@@ -159,6 +159,7 @@ fn filter_hardware_section(section: &Section, toggles: &HardwareToggles) -> Sect
 fn filter_userspace_section(section: &Section, toggles: &UserspaceToggles) -> Section {
     let lines: Vec<_> = section.lines.iter()
         .filter(|(key, _)| match key.as_str() {
+            "User" => toggles.user,
             "Packages" => toggles.packages,
             "Terminal" => toggles.terminal,
             "Shell" => toggles.shell,
@@ -166,6 +167,7 @@ fn filter_userspace_section(section: &Section, toggles: &UserspaceToggles) -> Se
             "UI" => toggles.ui,
             "Editor" => toggles.editor,
             "Terminal Font" => toggles.terminal_font,
+            "Colors" => toggles.colors,
             _ => true,
         })
         .cloned()

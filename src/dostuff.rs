@@ -45,6 +45,8 @@ pub fn load_sections(config: &Config) -> (Section, Section, Section) {
     let wm = if config.userspace.wm { Some(modules::userspace::wm()) } else { None };
     let ui = if config.userspace.ui { Some(modules::userspace::ui()) } else { None };
     let editor = if config.userspace.editor { Some(modules::userspace::editor()) } else { None };
+    let user = if config.userspace.user { Some(modules::userspace::user()) } else { None };
+    let colors = if config.userspace.colors { Some(modules::userspace::colors(config.userspace.colors_style)) } else { None };
 
     // Build core section - OS info, kernel version, system uptime, init system, OS age.
     let mut core_lines = Vec::new();
@@ -88,8 +90,13 @@ pub fn load_sections(config: &Config) -> (Section, Section, Section) {
     }
     let hardware = Section::new("Hardware", hardware_lines);
 
-    // Build userspace section - packages, terminal, shell, WM, UI, editor, font.
+    // Build userspace section - packages, terminal, shell, WM, UI, editor, font, colors.
     let mut userspace_lines = Vec::new();
+    if let Some(v) = user {
+        if v != "unknown" {
+            userspace_lines.push(("User".to_string(), v));
+        }
+    }
     if let Some(h) = packages_handler {
         userspace_lines.push(("Packages".to_string(), h.join().unwrap_or_else(|_| "error".into())));
     }
@@ -107,6 +114,9 @@ pub fn load_sections(config: &Config) -> (Section, Section, Section) {
     }
     if let Some(h) = font_handler {
         userspace_lines.push(("Terminal Font".to_string(), h.join().unwrap_or_else(|_| "error".into())));
+    }
+    if let Some(v) = colors {
+        userspace_lines.push(("Colors".to_string(), v));
     }
     let userspace = Section::new("Userspace", userspace_lines);
 

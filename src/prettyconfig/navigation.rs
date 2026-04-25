@@ -4,6 +4,7 @@
 use crate::configloader::{
     ArtPosition, BorderLineStyle, BoxStyle, Config, CoreToggles, GpuDisplayMode, HardwareToggles, NerdFontSetting, OsArtSetting, ThemePreset, UserspaceToggles,
 };
+use crate::modules::userspace::ColorSwatchStyle;
 use crate::dostuff;
 use crate::modules::ascii;
 use crate::prettyconfig::helpers::{theme_color_to_ratatui};
@@ -46,11 +47,11 @@ impl FocusArea {
 
     pub fn max_index(self) -> usize {
         match self {
-            Self::General => 4,   // Theme, Nerd Fonts, Box Style, Border Lines, GPU Display
+            Self::General => 5,   // Theme, Nerd Fonts, Box Style, Border Lines, GPU Display, Color Style
             Self::Art => 3,       // upper bound; actual max is dynamic (see move_down)
             Self::Core => 4,      // OS, Kernel, Uptime, Init, OS Age
             Self::Hardware => 5,  // CPU, GPU, Memory, Storage, Battery, Screen
-            Self::Userspace => 6, // Packages, Terminal, Shell, WM, UI, Editor, Term Font
+            Self::Userspace => 8, // User, Packages, Terminal, Shell, WM, UI, Editor, Term Font, Colors
         }
     }
 }
@@ -71,6 +72,7 @@ pub struct App {
     pub core: CoreToggles,
     pub hardware: HardwareToggles,
     pub userspace: UserspaceToggles,
+    pub colors_style: ColorSwatchStyle,
 
     // Navigation - Tab switches focus area, Up/Down selects within area
     pub focus: FocusArea,
@@ -119,7 +121,8 @@ impl App {
             cpu: true, gpu: true, gpu_display: config.hardware.gpu_display, memory: true, storage: true, battery: true, screen: true,
         };
         full_config.userspace = UserspaceToggles {
-            packages: true, terminal: true, shell: true, wm: true, ui: true, editor: true, terminal_font: true,
+            user: true, packages: true, terminal: true, shell: true, wm: true, ui: true, editor: true, terminal_font: true, colors: true,
+            colors_style: config.userspace.colors_style,
         };
         let sections = dostuff::load_sections(&full_config);
 
@@ -137,6 +140,7 @@ impl App {
             core: config.core.clone(),
             hardware: config.hardware.clone(),
             userspace: config.userspace.clone(),
+            colors_style: config.userspace.colors_style,
 
             focus: FocusArea::General,
             index: 0,
@@ -339,6 +343,26 @@ impl App {
         self.update_preview();
     }
 
+    pub fn cycle_colors_style_next(&mut self) {
+        self.colors_style = match self.colors_style {
+            ColorSwatchStyle::Circle => ColorSwatchStyle::Ring,
+            ColorSwatchStyle::Ring => ColorSwatchStyle::Box,
+            ColorSwatchStyle::Box => ColorSwatchStyle::Circle,
+        };
+        self.userspace.colors_style = self.colors_style;
+        self.reload_sections_for_gpu_display(); // full reload
+    }
+
+    pub fn cycle_colors_style_prev(&mut self) {
+        self.colors_style = match self.colors_style {
+            ColorSwatchStyle::Circle => ColorSwatchStyle::Box,
+            ColorSwatchStyle::Ring => ColorSwatchStyle::Circle,
+            ColorSwatchStyle::Box => ColorSwatchStyle::Ring,
+        };
+        self.userspace.colors_style = self.colors_style;
+        self.reload_sections_for_gpu_display(); // full reload
+    }
+
     pub fn cycle_art_position(&mut self) {
         self.art_position = match self.art_position {
             ArtPosition::Left => ArtPosition::Right,
@@ -380,7 +404,8 @@ impl App {
                 cpu: true, gpu: true, gpu_display: self.gpu_display, memory: true, storage: true, battery: true, screen: true,
             },
             userspace: UserspaceToggles {
-                packages: true, terminal: true, shell: true, wm: true, ui: true, editor: true, terminal_font: true,
+                user: true, packages: true, terminal: true, shell: true, wm: true, ui: true, editor: true, terminal_font: true, colors: true,
+                colors_style: self.colors_style,
             },
         };
         self.cached_sections = dostuff::load_sections(&full_config);
@@ -403,7 +428,8 @@ impl App {
                 cpu: true, gpu: true, gpu_display: self.gpu_display, memory: true, storage: true, battery: true, screen: true,
             },
             userspace: UserspaceToggles {
-                packages: true, terminal: true, shell: true, wm: true, ui: true, editor: true, terminal_font: true,
+                user: true, packages: true, terminal: true, shell: true, wm: true, ui: true, editor: true, terminal_font: true, colors: true,
+                colors_style: self.colors_style,
             },
         };
         self.cached_sections = dostuff::load_sections(&full_config);

@@ -52,7 +52,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
 
     let main_chunks = Layout::vertical([
-        Constraint::Length(20),
+        Constraint::Length(24),
         Constraint::Min(10),
         Constraint::Length(1),
     ])
@@ -94,9 +94,9 @@ fn draw_settings_panel(
     };
 
     let rows = Layout::vertical([
-        Constraint::Length(8),
+        Constraint::Length(9),
         Constraint::Length(1),
-        Constraint::Min(9),
+        Constraint::Min(11),
     ])
     .split(inner);
 
@@ -191,6 +191,20 @@ fn draw_general_box(
         Span::styled(format!("◀ {:^12} ▶", gpu_display_name(app.gpu_display)), style.fg(value_color)),
     ]);
     frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 4, height: 1, ..inner });
+
+    // Color Style (index 5)
+    let selected = focused && app.index == 5;
+    let style = if selected { Style::default().add_modifier(Modifier::REVERSED) } else { Style::default() };
+    let color_style_name = match app.colors_style {
+        crate::modules::userspace::ColorSwatchStyle::Circle => "Circle",
+        crate::modules::userspace::ColorSwatchStyle::Ring   => "Ring",
+        crate::modules::userspace::ColorSwatchStyle::Box    => "Box",
+    };
+    let line = Line::from(vec![
+        Span::styled("Color Style: ", style.fg(key_color)),
+        Span::styled(format!("◀ {:^12} ▶", color_style_name), style.fg(value_color)),
+    ]);
+    frame.render_widget(Paragraph::new(line), Rect { y: inner.y + 5, height: 1, ..inner });
 }
 
 /// Draw the art configuration box (Mode + Source + Art Position)
@@ -335,6 +349,7 @@ fn draw_toggle_grid(
     ], cols[1], border_color, title_color, key_color);
 
     draw_toggle_column(frame, app, "Userspace", FocusArea::Userspace, &[
+        ("User", app.userspace.user),
         ("Packages", app.userspace.packages),
         ("Terminal", app.userspace.terminal),
         ("Shell", app.userspace.shell),
@@ -342,6 +357,7 @@ fn draw_toggle_grid(
         ("UI", app.userspace.ui),
         ("Editor", app.userspace.editor),
         ("Term Font", app.userspace.terminal_font),
+        ("Colors", app.userspace.colors),
     ], cols[2], border_color, title_color, key_color);
 }
 

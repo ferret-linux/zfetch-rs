@@ -80,6 +80,7 @@
 
 [userspace]
 ## Toggle which items to show in Userspace.
+# user = true
 # packages = true
 # terminal = true
 # shell = true
@@ -87,3 +88,6 @@
 # ui = true
 # editor = true
 # terminal_font = true
+# colors = true
+## Color swatch style: "circle" (default), "ring", or "box"
+# colors_style = "circle"
