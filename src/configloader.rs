@@ -98,6 +98,7 @@ impl Default for HardwareToggles {
 // Toggle settings for Userspace section keys
 #[derive(Debug, Clone)]
 pub struct UserspaceToggles {
+    pub user: bool,
     pub packages: bool,
     pub terminal: bool,
     pub shell: bool,
@@ -105,11 +106,14 @@ pub struct UserspaceToggles {
     pub ui: bool,
     pub editor: bool,
     pub terminal_font: bool,
+    pub colors: bool,
+    pub colors_style: crate::modules::userspace::ColorSwatchStyle,
 }
 
 impl Default for UserspaceToggles {
     fn default() -> Self {
         Self {
+            user: true,
             packages: true,
             terminal: true,
             shell: true,
@@ -117,6 +121,8 @@ impl Default for UserspaceToggles {
             ui: true,
             editor: true,
             terminal_font: true,
+            colors: true,
+            colors_style: crate::modules::userspace::ColorSwatchStyle::default(),
         }
     }
 }
@@ -732,6 +738,7 @@ fn parse_config(content: &str) -> Config {
         if current_section == ConfigSection::Userspace {
             let is_true = value == b"true";
             match key {
+                b"user" => config.userspace.user = is_true,
                 b"packages" => config.userspace.packages = is_true,
                 b"terminal" => config.userspace.terminal = is_true,
                 b"shell" => config.userspace.shell = is_true,
@@ -739,6 +746,19 @@ fn parse_config(content: &str) -> Config {
                 b"ui" => config.userspace.ui = is_true,
                 b"editor" => config.userspace.editor = is_true,
                 b"terminal_font" => config.userspace.terminal_font = is_true,
+                b"colors" => config.userspace.colors = is_true,
+                b"colors_style" => {
+                    let style_str = if value.first() == Some(&b'"') && value.last() == Some(&b'"') && value.len() > 2 {
+                        std::str::from_utf8(&value[1..value.len() - 1]).ok()
+                    } else {
+                        std::str::from_utf8(value).ok()
+                    };
+                    if let Some(s) = style_str {
+                        if let Some(style) = crate::modules::userspace::ColorSwatchStyle::from_str(s) {
+                            config.userspace.colors_style = style;
+                        }
+                    }
+                }
                 _ => {}
             }
         }

@@ -335,6 +335,7 @@ fn draw_toggle_grid(
     ], cols[1], border_color, title_color, key_color);
 
     draw_toggle_column(frame, app, "Userspace", FocusArea::Userspace, &[
+        ("User", app.userspace.user),
         ("Packages", app.userspace.packages),
         ("Terminal", app.userspace.terminal),
         ("Shell", app.userspace.shell),
@@ -342,6 +343,7 @@ fn draw_toggle_grid(
         ("UI", app.userspace.ui),
         ("Editor", app.userspace.editor),
         ("Term Font", app.userspace.terminal_font),
+        ("Colors", app.userspace.colors),
     ], cols[2], border_color, title_color, key_color);
 }
 

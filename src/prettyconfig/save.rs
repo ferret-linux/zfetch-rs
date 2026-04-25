@@ -196,6 +196,7 @@ pub fn generate_config_toml(
     // userspace section
     output.push_str("\n[userspace]\n");
     output.push_str("## Toggle which items to show in Userspace.\n");
+    write_bool_setting(&mut output, "user", userspace.user, true);
     write_bool_setting(&mut output, "packages", userspace.packages, true);
     write_bool_setting(&mut output, "terminal", userspace.terminal, true);
     write_bool_setting(&mut output, "shell", userspace.shell, true);
@@ -203,6 +204,13 @@ pub fn generate_config_toml(
     write_bool_setting(&mut output, "ui", userspace.ui, true);
     write_bool_setting(&mut output, "editor", userspace.editor, true);
     write_bool_setting(&mut output, "terminal_font", userspace.terminal_font, true);
+    write_bool_setting(&mut output, "colors", userspace.colors, true);
+    output.push_str("## Color swatch style: \"circle\" (default), \"ring\", or \"box\"\n");
+    match userspace.colors_style {
+        crate::modules::userspace::ColorSwatchStyle::Circle => output.push_str("# colors_style = \"circle\"\n"),
+        crate::modules::userspace::ColorSwatchStyle::Ring => output.push_str("colors_style = \"ring\"\n"),
+        crate::modules::userspace::ColorSwatchStyle::Box => output.push_str("colors_style = \"box\"\n"),
+    }
     output
 }
 

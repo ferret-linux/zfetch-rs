@@ -106,6 +106,12 @@ impl App {
                     _ => {}
                 }
             }
+            FocusArea::Userspace => {
+                if self.index == 8 {
+                    self.cycle_colors_style_prev();
+                    self.update_preview();
+                }
+            }
             _ => {}
         }
     }
@@ -142,6 +148,12 @@ impl App {
                     1 if builtin => self.cycle_os_art_next(),
                     2 => { self.cycle_art_position(); self.update_preview(); }
                     _ => {}
+                }
+            }
+            FocusArea::Userspace => {
+                if self.index == 8 {
+                    self.cycle_colors_style_next();
+                    self.update_preview();
                 }
             }
             _ => {}
@@ -217,13 +229,15 @@ impl App {
             }
             FocusArea::Userspace => {
                 match self.index {
-                    0 => self.userspace.packages = !self.userspace.packages,
-                    1 => self.userspace.terminal = !self.userspace.terminal,
-                    2 => self.userspace.shell = !self.userspace.shell,
-                    3 => self.userspace.wm = !self.userspace.wm,
-                    4 => self.userspace.ui = !self.userspace.ui,
-                    5 => self.userspace.editor = !self.userspace.editor,
-                    6 => self.userspace.terminal_font = !self.userspace.terminal_font,
+                    0 => self.userspace.user = !self.userspace.user,
+                    1 => self.userspace.packages = !self.userspace.packages,
+                    2 => self.userspace.terminal = !self.userspace.terminal,
+                    3 => self.userspace.shell = !self.userspace.shell,
+                    4 => self.userspace.wm = !self.userspace.wm,
+                    5 => self.userspace.ui = !self.userspace.ui,
+                    6 => self.userspace.editor = !self.userspace.editor,
+                    7 => self.userspace.terminal_font = !self.userspace.terminal_font,
+                    8 => self.userspace.colors = !self.userspace.colors,
                     _ => {}
                 }
                 self.update_preview();
