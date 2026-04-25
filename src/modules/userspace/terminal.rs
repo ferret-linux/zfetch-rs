@@ -1,5 +1,5 @@
 use std::env;
- use crate::helpers::capitalize;
+use crate::helpers::capitalize;
 
 // Get the active terminal
 pub fn terminal() -> String {
