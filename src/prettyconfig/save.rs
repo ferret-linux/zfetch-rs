@@ -101,12 +101,6 @@ pub fn generate_config_toml(
         output.push_str("# image_path = \"~/.config/zfetch/image.png\"\n");
     }
 
-    output.push_str("\n## Art/image position: \"left\" (default) or \"right\"\n");
-    match art_position {
-        ArtPosition::Left => output.push_str("# art_position = \"left\"\n"),
-        ArtPosition::Right => output.push_str("art_position = \"right\"\n"),
-    }
-
     output.push_str("\n## Art position: \"left\" (default) or \"right\"\n");
     match art_position {
         ArtPosition::Left => output.push_str("# art_position = \"left\"\n"),
