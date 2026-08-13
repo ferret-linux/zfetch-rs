@@ -286,29 +286,6 @@ pub fn packages() -> String {
         }
     }
 
-    // Zbox - read container count from ~/.config/zbox/data.toml
-    if let Ok(home) = env::var("HOME") {
-        let zbox_toml = format!("{}/.config/zbox/data.toml", home);
-        if let Ok(content) = fs::read(&zbox_toml) {
-            let needle = b"zfetch-integration-zbox";
-            if let Some(pos) = memmem::find(&content, needle) {
-                // Find the newline after the key to get the value line
-                let after = &content[pos + needle.len()..];
-                if let Some(nl) = memchr::memchr(b'\n', after) {
-                    let line = std::str::from_utf8(&after[..nl]).unwrap_or("").trim();
-                    // Strip '= ' prefix if present
-                    let value = line.trim_start_matches('=').trim();
-                    if let Ok(count) = value.parse::<usize>() {
-                        if count > 0 {
-                            let icon = if nerd { "󰬡" } else { "(zbox)" };
-                            counts.push(format!("{} {}", icon, count));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // Homebrew - count directories in Cellar via $HOMEBREW_CELLAR env var
     if let Ok(cellar) = env::var("HOMEBREW_CELLAR") {
         if let Ok(entries) = fs::read_dir(&cellar) {
