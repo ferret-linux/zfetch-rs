@@ -26,7 +26,6 @@ const ASCII_ART_AURORA: &str = include_str!("../assets/distros/full/aurora.txt")
 const ASCII_ART_OMARCHY: &str = include_str!("../assets/distros/full/omarchy.txt");
 const ASCII_ART_MINT: &str = include_str!("../assets/distros/full/mint.txt");
 const ASCII_ART_NOBARA: &str = include_str!("../assets/distros/full/nobara.txt");
-const ASCII_ART_ZODIUM: &str = include_str!("../assets/distros/full/zodium.txt");
 const ASCII_ART_ALMA: &str = include_str!("../assets/distros/full/alma.txt");
 const ASCII_ART_RHEL: &str = include_str!("../assets/distros/full/rhel.txt");
 const ASCII_ART_OPENSUSE: &str = include_str!("../assets/distros/full/opensuse.txt");
@@ -50,7 +49,6 @@ const ASCII_ART_AURORA_SMALL: &str = include_str!("../assets/distros/small/auror
 const ASCII_ART_OMARCHY_SMALL: &str = include_str!("../assets/distros/small/omarchy-small.txt");
 const ASCII_ART_MINT_SMALL: &str = include_str!("../assets/distros/small/mint-small.txt");
 const ASCII_ART_NOBARA_SMALL: &str = include_str!("../assets/distros/small/nobara-small.txt");
-const ASCII_ART_ZODIUM_SMALL: &str = include_str!("../assets/distros/small/zodium-small.txt");
 const ASCII_ART_ALMA_SMALL: &str = include_str!("../assets/distros/small/alma-small.txt");
 const ASCII_ART_RHEL_SMALL: &str = include_str!("../assets/distros/small/rhel-small.txt");
 const ASCII_ART_OPENSUSE_SMALL: &str = include_str!("../assets/distros/small/opensuse-small.txt");
@@ -104,8 +102,6 @@ pub fn get_os_logo_lines(os_name: &str) -> Option<Vec<String>> {
         Some(ASCII_ART_MINT)
     } else if os_lower.contains("nobara") {
         Some(ASCII_ART_NOBARA)
-    } else if os_lower.contains("zodium") {
-        Some(ASCII_ART_ZODIUM)
     } else if os_lower.contains("alma") {
         Some(ASCII_ART_ALMA)
     } else if os_lower.contains("rhel") {
@@ -159,8 +155,6 @@ pub fn get_os_logo_lines_small(os_name: &str) -> Option<Vec<String>> {
         Some(ASCII_ART_MINT_SMALL)
     } else if os_lower.contains("nobara") {
         Some(ASCII_ART_NOBARA_SMALL)
-    } else if os_lower.contains("zodium") {
-        Some(ASCII_ART_ZODIUM_SMALL)
     } else if os_lower.contains("alma") {
         Some(ASCII_ART_ALMA_SMALL)
     } else if os_lower.contains("rhel") {
