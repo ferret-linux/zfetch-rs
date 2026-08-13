@@ -67,7 +67,7 @@ fn count_rpm_sqlite(db_path: &str) -> Option<usize> {
         return None;
     }
 
-    let sql = b"SELECT count(*) FROM Packages\0";
+    let sql = b"SELECT count(*) FROM Sigmd5\0";
     let mut stmt: *mut c_void = std::ptr::null_mut();
     let rc = unsafe { sqlite3_prepare_v2(db, sql.as_ptr() as *const c_char, -1, &mut stmt, std::ptr::null_mut()) };
     if rc != SQLITE_OK {
@@ -110,18 +110,64 @@ fn count_appimages(dir: &Path) -> usize {
     count
 }
 
+// Resolve pacman's package DB directory from /etc/pacman.conf (DBPath or RootDir),
+// falling back to the default /var/lib/pacman/local if neither is set or the file is absent.
+fn get_pacman_db_path() -> String {
+    if let Ok(content) = fs::read_to_string("/etc/pacman.conf") {
+        let mut db_path: Option<String> = None;
+        let mut root_dir: Option<String> = None;
+
+        for line in content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("DBPath") {
+                if let Some(value) = rest.trim_start().strip_prefix('=') {
+                    db_path = Some(value.trim().to_string());
+                }
+            } else if let Some(rest) = line.strip_prefix("RootDir") {
+                if let Some(value) = rest.trim_start().strip_prefix('=') {
+                    root_dir = Some(value.trim().to_string());
+                }
+            }
+        }
+
+        if let Some(mut path) = db_path {
+            if !path.ends_with('/') {
+                path.push('/');
+            }
+            path.push_str("local");
+            return path;
+        }
+
+        if let Some(mut root) = root_dir {
+            if !root.ends_with('/') {
+                root.push('/');
+            }
+            root.push_str("var/lib/pacman/local");
+            return root;
+        }
+    }
+
+    "/var/lib/pacman/local".to_string()
+}
+
 // Get the total number of installed packages.
 // Supports fedora (rpm), arch & hopefully supports debian , solus , artix , nixOS , void , gentoo , alpine
 pub fn packages() -> String {
     let mut counts: Vec<String> = Vec::with_capacity(11);
     let nerd = get_cached_is_nerd_font();
 
-    // Pacman - count directories in /var/lib/pacman/local/
-    if let Ok(entries) = fs::read_dir("/var/lib/pacman/local") {
-        let count = entries.filter_map(|e| e.ok()).filter(|e| e.file_type().map_or(false, |ft| ft.is_dir())).count();
-        if count > 0 {
-            let icon = if nerd { "󰮯" } else { "(pacman)" };
-            counts.push(format!("{} {}", icon, count));
+    // Pacman - count directories in DBPath/local, resolved from pacman.conf (falls back to /var/lib/pacman/local)
+    {
+        let pacman_db = get_pacman_db_path();
+        if let Ok(entries) = fs::read_dir(&pacman_db) {
+            let count = entries.filter_map(|e| e.ok()).filter(|e| e.file_type().map_or(false, |ft| ft.is_dir())).count();
+            if count > 0 {
+                let icon = if nerd { "󰮯" } else { "(pacman)" };
+                counts.push(format!("{} {}", icon, count));
+            }
         }
     }
 
@@ -218,15 +264,15 @@ pub fn packages() -> String {
         }
     }
 
-    // XBPS (Void Linux) - find pkgdb dir and count package subdirs
+    // XBPS (Void Linux) - find pkgdb-*.plist file and count "installed" entries within it
     if let Ok(entries) = fs::read_dir("/var/db/xbps") {
         if let Some(pkgdb) = entries.filter_map(|e| e.ok())
-            .find(|e| e.file_name().as_encoded_bytes().starts_with(b"pkgdb"))
+            .find(|e| e.file_type().map_or(false, |ft| ft.is_file())
+                && e.file_name().as_encoded_bytes().starts_with(b"pkgdb-"))
         {
-            if let Ok(pkgs) = fs::read_dir(pkgdb.path()) {
-                let count = pkgs.filter_map(|e| e.ok())
-                    .filter(|e| e.file_type().map_or(false, |ft| ft.is_dir()))
-                    .count();
+            if let Ok(content) = fs::read(pkgdb.path()) {
+                let needle = b"<string>installed</string>";
+                let count = memmem::find_iter(&content, needle).count();
                 if count > 0 {
                     let icon = if nerd { "" } else { "(xbps)" };
                     counts.push(format!("{} {}", icon, count));
