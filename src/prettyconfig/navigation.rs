@@ -49,7 +49,7 @@ impl FocusArea {
         match self {
             Self::General => 5,   // Theme, Nerd Fonts, Box Style, Border Lines, GPU Display, Color Style
             Self::Art => 3,       // upper bound; actual max is dynamic (see move_down)
-            Self::Core => 4,      // OS, Kernel, Uptime, Init, OS Age
+            Self::Core => 5,      // OS, Kernel, Platform, Uptime, Init, OS Age
             Self::Hardware => 5,  // CPU, GPU, Memory, Storage, Battery, Screen
             Self::Userspace => 8, // User, Packages, Terminal, Shell, WM, UI, Editor, Term Font, Colors
         }
