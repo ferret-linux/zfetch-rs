@@ -113,7 +113,7 @@ fn count_appimages(dir: &Path) -> usize {
 // Get the total number of installed packages.
 // Supports fedora (rpm), arch & hopefully supports debian , solus , artix , nixOS , void , gentoo , alpine
 pub fn packages() -> String {
-    let mut counts: Vec<String> = Vec::with_capacity(9);
+    let mut counts: Vec<String> = Vec::with_capacity(11);
     let nerd = get_cached_is_nerd_font();
 
     // Pacman - count directories in /var/lib/pacman/local/
