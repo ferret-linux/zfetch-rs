@@ -1,0 +1,171 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            suffix: glibc-x86_64
+          - target: x86_64-unknown-linux-musl
+            suffix: musl-x86_64
+          - target: aarch64-unknown-linux-gnu
+            suffix: glibc-aarch64
+          - target: aarch64-unknown-linux-musl
+            suffix: musl-aarch64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Get Current Version
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -n1 | cut -d '"' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "BINARY_NAME=zfetch-${VERSION}-${{ matrix.suffix }}" >> $GITHUB_ENV
+
+      - name: Install targets and cross-compile tools
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo install cross --locked
+
+      - name: Build Release Binary
+        run: cross build --release --locked --target ${{ matrix.target }}
+
+      - name: Rename and Strip Binary
+        run: |
+          mv target/${{ matrix.target }}/release/zfetch ${{ env.BINARY_NAME }}
+          strip ${{ env.BINARY_NAME }} || true
+
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BINARY_NAME }}
+          path: ${{ env.BINARY_NAME }}
+          if-no-files-found: error
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sanity build with lockfile
+        run: cargo build --release --locked
+
+      - name: Check Cargo.toml and PKGBUILD versions match
+        id: check
+        run: |
+          CARGO_VERSION=$(grep '^version' Cargo.toml | head -n1 | cut -d '"' -f2)
+          PKGBUILD_VERSION=$(grep '^pkgver=' PKGBUILD | cut -d '=' -f2)
+          echo "Cargo.toml version: $CARGO_VERSION"
+          echo "PKGBUILD version:   $PKGBUILD_VERSION"
+          if [ "$CARGO_VERSION" != "$PKGBUILD_VERSION" ]; then
+            echo "ERROR: Version mismatch! Cargo.toml=$CARGO_VERSION PKGBUILD=$PKGBUILD_VERSION"
+            exit 1
+          fi
+          echo "version=$CARGO_VERSION" >> $GITHUB_OUTPUT
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    outputs:
+      tag: ${{ steps.info.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect release info
+        id: info
+        run: |
+          VERSION=${{ needs.verify.outputs.version }}
+          TAG="v${VERSION}"
+          git config user.name "zfetch release bot"
+          git config user.email "releases@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "release_name=zfetch ${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release and upload binaries
+        run: |
+          gh release create "${{ steps.info.outputs.tag }}" \
+            --title "zfetch ${{ needs.verify.outputs.version }}" \
+            artifacts/*
+
+  publish-aur:
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/stable'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: stable
+
+      - name: Setup SSH for AUR
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/aur_key
+          chmod 600 ~/.ssh/aur_key
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
+          cat >> ~/.ssh/config << EOF
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur_key
+            User aur
+          EOF
+
+      - name: Clone AUR repo
+        run: |
+          git clone ssh://aur@aur.archlinux.org/zfetch-rs.git ~/aur
+          sudo chown -R $USER:$USER ~/aur
+
+      - name: Copy PKGBUILD from repo
+        run: cp PKGBUILD ~/aur/PKGBUILD
+
+      - name: Generate .SRCINFO
+        run: |
+          docker run --rm -v ~/aur:/pkg archlinux:latest bash -c "
+            pacman -Sy --noconfirm pacman-contrib &&
+            useradd -m builder &&
+            chown -R builder /pkg &&
+            su builder -c 'cd /pkg && makepkg --printsrcinfo > .SRCINFO'
+          "
+
+      - name: Fix permissions after docker
+        run: sudo chown -R $USER:$USER ~/aur
+
+      - name: Push to AUR
+        run: |
+          cd ~/aur
+          git config user.name "zodium-project"
+          git config user.email "dev.zodium.project@gmail.com"
+          git add PKGBUILD .SRCINFO
+          git diff --cached --quiet || git commit -m "Update to ${{ needs.release.outputs.tag }}"
+          git push
