@@ -103,8 +103,8 @@ jobs:
           TAG="v${VERSION}"
           git config user.name "zfetch release bot"
           git config user.email "releases@users.noreply.github.com"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
+          git tag -fa "$TAG" -m "Release $TAG"
+          git push -f origin "$TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "release_name=zfetch ${VERSION}" >> $GITHUB_OUTPUT
 
@@ -115,9 +115,11 @@ jobs:
 
       - name: Create Release and upload binaries
         run: |
+          gh release view "${{ steps.info.outputs.tag }}" >/dev/null 2>&1 \
+            && gh release delete "${{ steps.info.outputs.tag }}" --yes
           gh release create "${{ steps.info.outputs.tag }}" \
             --title "zfetch ${{ needs.verify.outputs.version }}" \
-            artifacts/*
+            artifacts/*/*
 
   publish-aur:
     needs: release
